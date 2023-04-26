@@ -1,3 +1,6 @@
+//
+// nekRS User Defined File
+//
 #include <math.h>
 #include "udf.hpp"
 
