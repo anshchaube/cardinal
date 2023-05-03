@@ -110,6 +110,9 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
     _usrwrk_indices.push_back("mesh_velocity_x");
     _usrwrk_indices.push_back("mesh_velocity_y");
     _usrwrk_indices.push_back("mesh_velocity_z");
+    _usrwrk_indices.push_back("tr_x");
+    _usrwrk_indices.push_back("tr_y");
+    _usrwrk_indices.push_back("tr_z");
   }
 
   _minimum_scratch_size_for_coupling = _usrwrk_indices.size();

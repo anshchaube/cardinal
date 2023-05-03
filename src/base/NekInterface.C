@@ -1451,6 +1451,27 @@ scalar03(const int id)
   return nrs->cds->S[id + 3 * scalarFieldOffset()];
 }
 
+void
+tr_x(const int id, const dfloat value)
+{
+  nrs_t * nrs = (nrs_t *)nrsPtr();
+  nrs->usrwrk[indices.tr_x + id] = value;
+}
+
+void
+tr_y(const int id, const dfloat value)
+{
+  nrs_t * nrs = (nrs_t *)nrsPtr();
+  nrs->usrwrk[indices.tr_y + id] = value;
+}
+
+void
+tr_z(const int id, const dfloat value)
+{
+  nrs_t * nrs = (nrs_t *)nrsPtr();
+  nrs->usrwrk[indices.tr_z + id] = value;
+}
+
 double
 temperature(const int id)
 {
@@ -1608,6 +1629,24 @@ double (*solutionPointer(const field::NekFieldEnum & field))(int)
                    "because your Nek case files do not have a scalar03 variable!");
       f = &solution::scalar03;
       break;
+    case field::tr_x:
+// TODO: add some check for fluid-to-solid FSI coupling     if (!hasScalarVariable(3))
+//        mooseError("Cardinal cannot find 'scalar03' "
+//                   "because your Nek case files do not have a scalar03 variable!");
+      f = &solution::tr_x;
+      break;
+    case field::try:
+// TODO: add some check for fluid-to-solid FSI coupling     if (!hasScalarVariable(3))
+//        mooseError("Cardinal cannot find 'scalar03' "
+//                   "because your Nek case files do not have a scalar03 variable!");
+      f = &solution::tr_y;
+      break;
+    case field::trz:
+// TODO: add some check for fluid-to-solid FSI coupling     if (!hasScalarVariable(3))
+//        mooseError("Cardinal cannot find 'scalar03' "
+//                   "because your Nek case files do not have a scalar03 variable!");
+      f = &solution::tr_z;
+      break;
     case field::unity:
       f = &solution::unity;
       break;
@@ -1737,6 +1776,15 @@ dimensionalize(const field::NekFieldEnum & field, double & value)
       break;
     case field::scalar03:
       // no dimensionalization needed
+      break;
+    case field::tr_x:
+      // TODO: add dimensionalisation for traction, commonly rho * U^2
+      break;
+    case field::tr_y:
+      // TODO: add dimensionalisation for traction, commonly rho * U^2
+      break;
+    case field::tr_z:
+      // TODO: add dimensionalisation for traction, commonly rho * U^2
       break;
     case field::unity:
       // no dimensionalization needed
