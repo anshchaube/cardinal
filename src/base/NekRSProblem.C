@@ -682,6 +682,8 @@ NekRSProblem::syncSolutions(ExternalProblem::Direction direction)
       // putting this here lets us use a consistent setting for the minimize transfers feature,
       // if used (otherwise, the 'temp' variable could be extracted on a different frequency
       // than other specifications, such as pressure or mu_t.
+      if(nekrs::hasElasticitySolver())
+        nekrs::copyTractionFromDevice(_minimum_scratch_size_for_coupling + _n_uo_slots);
       extractOutputs();
 
       break;

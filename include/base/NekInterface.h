@@ -289,6 +289,9 @@ void copyScratchToDevice(const unsigned int slots_reserved_by_cardinal);
 /// Copy the boundary deformation from host to device
 void copyDeformationToDevice();
 
+/// Copy traction from o_usrwrk for fluid-to-solid FSI coupling/traction transfer
+void copyTractionFromDevice(const unsigned int slots_reserved_by_cardinal);
+
 template <typename T>
 void allgatherv(const std::vector<int> & base_counts,
                 const T * input,
@@ -716,6 +719,15 @@ struct usrwrkIndices
   /// z-velocity of moving boundary (for mesh elasticity)
   int mesh_velocity_z;
 
+  /// x-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_x;
+
+  /// y-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_y;
+
+  /// z-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_z;
+
   /// boundary velocity (for separate domain coupling)
   int boundary_velocity;
 
@@ -797,6 +809,30 @@ double scalar02(const int id);
  * @return scalar03 value at index
  */
 double scalar03(const int id);
+
+/**
+ * \brief Get tr_x (traction_x) at given GLL index from usrwrk
+ *
+ * @param[in] id GLL index
+ * @return tr_x value at index
+ */
+double tr_x(const int id);
+
+/**
+ * \brief Get tr_y (traction_y) at given GLL index from usrwrk
+ *
+ * @param[in] id GLL index
+ * @return tr_y value at index
+ */
+double tr_y(const int id);
+
+/**
+ * \brief Get tr_z (traction_x) at given GLL index from usrwrk
+ *
+ * @param[in] id GLL index
+ * @return tr_z value at index
+ */
+double tr_z(const int id);
 
 /**
  * \brief Get the temperature solution at given GLL index
