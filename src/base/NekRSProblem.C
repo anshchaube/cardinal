@@ -102,7 +102,8 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
     _usrwrk_indices.push_back("heat_source");
   }
 
-  if (nekrs::hasElasticitySolver())
+//  if (nekrs::hasElasticitySolver())
+  if (nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
   {
     indices.mesh_velocity_x = start++ * nekrs::scalarFieldOffset();
     indices.mesh_velocity_y = start++ * nekrs::scalarFieldOffset();
@@ -161,7 +162,8 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
     _displacement_y = (double *)calloc(n_entries, sizeof(double));
     _displacement_z = (double *)calloc(n_entries, sizeof(double));
 
-    if (nekrs::hasElasticitySolver())
+//    if (nekrs::hasElasticitySolver())
+    if (nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
       _mesh_velocity_elem = (double *)calloc(n_entries, sizeof(double));
   }
 
@@ -222,7 +224,8 @@ NekRSProblem::initialSetup()
       }
   }
 
-  if (boundary && nekrs::hasElasticitySolver())
+//  if (boundary && nekrs::hasElasticitySolver())
+  if (boundary && nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
   {
     bool has_one_mv_bc = false;
     for (const auto & b : *boundary)
@@ -240,7 +243,8 @@ NekRSProblem::initialSetup()
                  " in the [MESH] block.");
   }
 
-  if (!boundary && nekrs::hasElasticitySolver())
+//  if (!boundary && nekrs::hasElasticitySolver())
+  if (!boundary && nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
     mooseError("Your nekRS .par file has 'solver = elasticity' in the [MESH] block. This solver uses\n"
                "displacement values at a boundary of interest to calcualte the mesh velocity. This\n"
                "mesh velocity is applied within nekRS on the same boundary to solve for fluid flow\n"
@@ -295,7 +299,8 @@ NekRSProblem::initialSetup()
   if (nekrs::hasMovingMesh() && !_disable_fld_file_output)
     nekrs::outfld(_timestepper->nondimensionalDT(_time), _t_step);
 
-  if (nekrs::hasElasticitySolver())
+//  if (nekrs::hasElasticitySolver())
+  if (nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
     _nek_mesh->initializePreviousDisplacements();
 
   if (nekrs::hasUserMeshSolver())
@@ -636,7 +641,8 @@ NekRSProblem::syncSolutions(ExternalProblem::Direction direction)
 
       if (nekrs::hasUserMeshSolver())
         sendVolumeDeformationToNek();
-      else if (nekrs::hasElasticitySolver())
+//      else if (nekrs::hasElasticitySolver())
+      else if (nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
         sendBoundaryDeformationToNek();
 
       for (const auto & uo : _nek_uos)
@@ -682,7 +688,8 @@ NekRSProblem::syncSolutions(ExternalProblem::Direction direction)
       // putting this here lets us use a consistent setting for the minimize transfers feature,
       // if used (otherwise, the 'temp' variable could be extracted on a different frequency
       // than other specifications, such as pressure or mu_t.
-      if(nekrs::hasElasticitySolver())
+//      if(nekrs::hasElasticitySolver())
+      if (nekrs::hasMovingMesh() && !(nekrs::hasUserMeshSolver()))
         nekrs::copyTractionFromDevice(_minimum_scratch_size_for_coupling + _n_uo_slots);
       extractOutputs();
 

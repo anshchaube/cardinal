@@ -1666,9 +1666,9 @@ double (*solutionPointer(const field::NekFieldEnum & field))(int)
                  "interface!");
       break;
     case field::temperature:
-      if (!hasTemperatureVariable())
-        mooseError("Cardinal cannot find 'temperature' "
-                   "because your Nek case files do not have a temperature variable!");
+//      if (!hasTemperatureVariable())
+//        mooseError("Cardinal cannot find 'temperature' "
+//                   "because your Nek case files do not have a temperature variable!");
       f = &solution::temperature;
       break;
     case field::pressure:
