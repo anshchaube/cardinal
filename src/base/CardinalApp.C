@@ -33,6 +33,10 @@
 #include "RadiationTransportApp.h"
 #endif
 
+#ifdef ENABLE_DIABLO_COUPLING
+#include "DiabloSyntax.h"
+#endif
+
 #ifdef ENABLE_BISON_COUPLING
 #include "BisonApp.h"
 #endif
@@ -130,6 +134,10 @@ CardinalApp::registerAll(Factory & f, ActionFactory & af, Syntax & s)
   /* register custom execute flags, action syntax, etc. here */
 #ifdef ENABLE_NEK_COUPLING
   Nek::associateSyntax(s, af);
+#endif
+
+#ifdef ENABLE_DIABLO_COUPLING
+  Diablo::associateSyntax(s, af);
 #endif
 
   associateSyntaxInner(s, af);
