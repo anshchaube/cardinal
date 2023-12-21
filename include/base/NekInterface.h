@@ -877,13 +877,6 @@ double velocity(const int id);
 double wall_shear(const int id);
 
 /**
- * Get the traction at given GLL index
- * @param[in] id GLL index
- * @return traction at index
- */
-double traction(const int id);
-
-/**
  * Get the x-traction at given GLL index
  * @param[in] id GLL index
  * @return x-traction at index
