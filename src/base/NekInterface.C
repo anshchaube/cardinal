@@ -665,7 +665,7 @@ initializeRateOfStrainTensor()
 void
 initializeTraction()
 {
-  nekrs::_traction = (double *)calloc(4*velocityFieldOffset(), sizeof(double)); //TODO: finalize size
+  nekrs::_traction = (double *)calloc(3*velocityFieldOffset(), sizeof(double)); //TODO: finalize size
 }
 
 void
@@ -1524,17 +1524,6 @@ computeTraction(double * traction, const nek_mesh::NekMeshEnum pp_mesh)
           traction[nrs_offset*2 + vol_id] = Tau_ij[5*nrs_offset + vol_id] * nx
                                           + Tau_ij[4*nrs_offset + vol_id] * ny
                                           + Tau_ij[2*nrs_offset + vol_id] * nz;
-
-          double t_dot_n = traction[0*nrs_offset + vol_id] * nx  // TODO: decide whether to keep
-                         + traction[1*nrs_offset + vol_id] * ny
-                         + traction[2*nrs_offset + vol_id] * nz;
-
-          double tx = traction[nrs_offset*0 + vol_id];
-          double ty = traction[nrs_offset*1 + vol_id];
-          double tz = traction[nrs_offset*2 + vol_id];
-
-          traction[nrs_offset*3 + vol_id] = (t_dot_n/t_dot_n) *
-                                          std::sqrt( tx * tx + ty * ty + tz * tz);
         }
       }
     }
@@ -1769,13 +1758,6 @@ wall_shear(const int id)
 }
 
 double
-traction(const int id)
-{
-  nrs_t * nrs = (nrs_t *)nrsPtr();
-  return _traction[id+ 3 * nrs->fieldOffset]; //TODO: decide whether to keep this or not
-}
-
-double
 traction_x(const int id)
 {
   nrs_t * nrs = (nrs_t *)nrsPtr();
@@ -1947,9 +1929,6 @@ double (*solutionPointer(const field::NekFieldEnum & field))(int)
     case field::wall_shear:
       f = &wall_shear;
       break;
-    case field::traction:
-      f = &traction;
-      break;
     case field::traction_x:
       f = &traction_x;
       break;
@@ -2114,9 +2093,6 @@ dimensionalize(const field::NekFieldEnum & field, double & value)
       // no dimensionalization needed
       break;
     case field::wall_shear:
-      // TODO: add dimensionalization
-      break;
-    case field::traction:
       // TODO: add dimensionalization
       break;
     case field::traction_x:
