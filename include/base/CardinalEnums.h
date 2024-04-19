@@ -99,6 +99,12 @@ enum NekFieldEnum
   scalar01,
   scalar02,
   scalar03,
+  s11,
+  s22,
+  s33,
+  s12,
+  s13,
+  s23,
   unity
 };
 
@@ -129,10 +135,10 @@ enum NekWriteEnum
 
 enum DiabloWriteEnum
 {
-  pres,
+ /* pres,
   tr_x,
   tr_y,
-  tr_z
+  tr_z*/
 };
 } // namespace field
 
