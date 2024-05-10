@@ -26,14 +26,7 @@ c-----------------------------------------------------------------------
       enddo
       enddo
 
-      theta = pi/2.0
       ntot = lx1*ly1*lz1*nelv
-      do i =  1, ntot
-        xx = xm1(i,1,1,1)
-        zz = zm1(i,1,1,1)
-        xm1(i,1,1,1) = xx*cos(theta) - zz*sin(theta) + 6.0
-        zm1(i,1,1,1) = xx*sin(theta) + zz*cos(theta)
-      enddo
 
       fac = 2.0e-2
 

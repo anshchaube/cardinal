@@ -24,19 +24,19 @@
     type = ParsedFunction
     expression = 0.0
   []
-  [s_23_exact]
+  [s_12_exact]
     type = ParsedFunction
     expression = 0.0
   []
-  [s_12_exact]
+  [s_13_exact]
     type = ParsedFunction
-    expression = '-y*u0/R/R'
+    expression = '-x*u0/R/R'
     symbol_names = 'R u0'
     symbol_values = '0.01 2.0'
   []
-  [s_13_exact]
+  [s_23_exact]
     type = ParsedFunction
-    expression = '-z*u0/R/R'
+    expression = '-y*u0/R/R'
     symbol_names = 'R u0'
     symbol_values = '0.01 2.0'
   []

@@ -24,13 +24,13 @@ void UDF_Setup(nrs_t *nrs)
   float u0  = 2.0;
 
   for (int n = 0; n < num_quadrature_points; n++) {
+    float xx = mesh->x[n];
     float yy = mesh->y[n];
-    float zz = mesh->z[n];
 
-    float rr = zz*zz + yy*yy;
-    nrs->U[n + 0 * nrs->fieldOffset] = u0*(1.0-(rr/Rsq));
+    float rr = xx*xx + yy*yy;
+    nrs->U[n + 0 * nrs->fieldOffset] = 0.0;
     nrs->U[n + 1 * nrs->fieldOffset] = 0.0;
-    nrs->U[n + 2 * nrs->fieldOffset] = 0.0;
+    nrs->U[n + 2 * nrs->fieldOffset] = u0*(1.0-(rr/Rsq));
 
     nrs->cds->S[n + 0 * nrs->cds->fieldOffset[0]] = 0.0;
   }

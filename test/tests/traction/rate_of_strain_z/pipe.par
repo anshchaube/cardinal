@@ -3,7 +3,7 @@
   numSteps = 200
   dt = 1e-4
   timeStepper = tombo2
-  constFlowRate = meanVelocity=1.0 + direction=X
+  constFlowRate = meanVelocity=1.0 + direction=Z
   writeInterval = 201
 
 [MESH]

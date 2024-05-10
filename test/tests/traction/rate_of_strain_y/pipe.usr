@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       integer iel, ifc, i, ntot
-      real theta, xx, zz, fac
+      real theta, yy, zz, fac
 
       do iel=1,nelt
       do ifc=1,2*ndim
@@ -29,10 +29,10 @@ c-----------------------------------------------------------------------
       theta = pi/2.0
       ntot = lx1*ly1*lz1*nelv
       do i =  1, ntot
-        xx = xm1(i,1,1,1)
+        yy = ym1(i,1,1,1)
         zz = zm1(i,1,1,1)
-        xm1(i,1,1,1) = xx*cos(theta) - zz*sin(theta) + 6.0
-        zm1(i,1,1,1) = xx*sin(theta) + zz*cos(theta)
+        ym1(i,1,1,1) = yy*cos(theta) - zz*sin(theta) + 6.0
+        zm1(i,1,1,1) = yy*sin(theta) + zz*cos(theta)
       enddo
 
       fac = 2.0e-2
