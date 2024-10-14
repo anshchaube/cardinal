@@ -696,23 +696,14 @@ struct usrwrkIndices
   /// z-velocity of moving boundary (for mesh elasticity)
   int filtered_velocity_z;
 
-  /// Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s11;
+  /// x-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_x;
 
-  /// Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s22;
+  /// y-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_y;
 
-  /// Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s33;
-
-  /// Off-Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s12;
-
-  /// Off-Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s13;
-
-  /// Off-Diagonal component of traction matrix (for fluid-to-solid FSI)
-  int s23;
+  /// z-traction of moving boundary (for fluid=to-solid FSI)
+  int tr_z;
 
   /// boundary velocity (for separate domain coupling)
   int boundary_velocity;
@@ -794,61 +785,29 @@ double scalar02(const int id);
 double scalar03(const int id);
 
 /**
- *\brief Get tr_11 (traction_11) at given GLL index from usrwrk
+ * \brief Get tr_x (traction_x) at given GLL index from usrwrk
  *
  * @param[in] id GLL index
- * @return s11 value at index
+ * @return tr_x value at index
  */
-double s11(const int id);
+double tr_x(const int id);
 
 /**
- *\brief Get s22 (traction_22) at given GLL index from usrwrk
- *
- *@param[in] id GLL index
- *@return tr_y value at index
- */
-double s22(const int id);
-
-/**
- *\brief Get s33 (traction_33) at given GLL index from usrwrk
- *
- *@param[in] id GLL index
- *@return s33 value at index
- */
-double s33(const int id);
-
-/**
- *\brief Get tr_12 (traction_12) at given GLL index from usrwrk
+ * \brief Get tr_y (traction_y) at given GLL index from usrwrk
  *
  * @param[in] id GLL index
- * @return s12 value at index
+ * @return tr_y value at index
  */
-double s12(const int id);
+double tr_y(const int id);
 
 /**
- *\brief Get tr_13 (traction_13) at given GLL index from usrwrk
+ * \brief Get tr_z (traction_x) at given GLL index from usrwrk
  *
- *@param[in] id GLL index
- *@return s13 value at index
- */
-double s13(const int id);
-
-/**
- *\brief Get s23 (traction_23) at given GLL index from usrwrk
- *
- *@param[in] id GLL index
- *@return s23 value at index
- */
-double s23(const int id);
-/**
- * \brief Get the temperature solution at given GLL index
- *
- * Because nekRS stores all the passive scalars together in one flat array, this routine
- * simply indices into the entire passive scalar solution. In order to get temperature, you should
- * only index up to nrs->cds->fieldOffset.
  * @param[in] id GLL index
- * @return temperature value at index
+ * @return tr_z value at index
  */
+double tr_z(const int id);
+
 double temperature(const int id);
 
 /**

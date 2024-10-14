@@ -119,6 +119,10 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
     _usrwrk_indices.push_back("mesh_velocity_y");
     _usrwrk_indices.push_back("mesh_velocity_z");
 
+//    _usrwrk_indices.push_back("tr_x");
+//    _usrwrk_indices.push_back("tr_y");
+//    _usrwrk_indices.push_back("tr_z");
+
     if (_calc_filtered_velocity)
     {
       indices.filtered_velocity_x = start++ * nekrs::scalarFieldOffset();
@@ -129,12 +133,12 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
       _usrwrk_indices.push_back("filtered_velocity_z");
     }
 
-    _usrwrk_indices.push_back("s11");
-    _usrwrk_indices.push_back("s22");
-    _usrwrk_indices.push_back("s33");
-    _usrwrk_indices.push_back("s12");
-    _usrwrk_indices.push_back("s13");
-    _usrwrk_indices.push_back("s23");
+//    _usrwrk_indices.push_back("s11");
+//    _usrwrk_indices.push_back("s22");
+//    _usrwrk_indices.push_back("s33");
+//    _usrwrk_indices.push_back("s12");
+//    _usrwrk_indices.push_back("s13");
+//    _usrwrk_indices.push_back("s23");
 
   }
 

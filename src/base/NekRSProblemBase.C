@@ -70,7 +70,7 @@ NekRSProblemBase::validParams()
   params.addRangeCheckedParam<Real>(
       "Cp_0", 1.0, "Cp_0 > 0.0", "Heat capacity parameter value for non-dimensional solution");
 
-  MultiMooseEnum nek_outputs("temperature pressure velocity scalar01 scalar02 scalar03 s11 s22 s33 s12 s13 s23");
+  MultiMooseEnum nek_outputs("temperature pressure velocity scalar01 scalar02 scalar03 tr_x tr_y tr_z");
   params.addParam<MultiMooseEnum>(
       "output", nek_outputs, "Field(s) to output from NekRS onto the mesh mirror");
 
@@ -929,18 +929,12 @@ NekRSProblemBase::extractOutputs()
         field_enum = field::scalar02;
       else if (_var_names[i] == "scalar03")
         field_enum = field::scalar03;
-      else if (_var_names[i] == "s11")
-        field_enum = field::s11;
-      else if (_var_names[i] == "s22")
-        field_enum = field::s22;
-      else if (_var_names[i] == "s33")
-        field_enum = field::s33;
-      else if (_var_names[i] == "s12")
-        field_enum = field::s12;
-      else if (_var_names[i] == "s13")
-        field_enum = field::s13;
-      else if (_var_names[i] == "s23")
-        field_enum = field::s23;
+      else if (_var_names[i] == "tr_x")
+        field_enum = field::tr_x;
+      else if (_var_names[i] == "tr_y")
+        field_enum = field::tr_y;
+      else if (_var_names[i] == "tr_z")
+        field_enum = field::tr_z;
       else
         mooseError("Unhandled NekFieldEnum in NekRSProblemBase!");
 
@@ -1015,18 +1009,12 @@ NekRSProblemBase::addExternalVariables()
         _var_names.push_back("scalar02");
       else if (output == "scalar03")
         _var_names.push_back("scalar03");
-      else if (output == "s11")
-        _var_names.push_back("s11");
-      else if (output == "s22")
-        _var_names.push_back("s22");
-      else if (output == "s33")
-        _var_names.push_back("s33");
-      else if (output == "s12")
-        _var_names.push_back("s12");
-      else if (output == "s13")
-        _var_names.push_back("s13");
-      else if (output == "s23")
-        _var_names.push_back("s23");
+      else if (output == "tr_x")
+        _var_names.push_back("tr_x");
+      else if (output == "tr_y")
+        _var_names.push_back("tr_y");
+      else if (output == "tr_z")
+        _var_names.push_back("tr_z");
     }
 
     _var_string = "";
