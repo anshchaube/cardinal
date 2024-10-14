@@ -1,0 +1,177 @@
+      include "aravg.f"
+      include "traction.f"
+      include "limits.f"
+      include "utilities.f"
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /nrsscptr/ nrs_scptr(9)
+      integer*8         nrs_scptr
+
+      common /usr_umesh/ umeshx(lx1,ly1,lz1,lelt),
+     & umeshy(lx1,ly1,lz1,lelt),
+     & umeshz(lx1,ly1,lz1,lelt)
+
+      common /old_y/ ym1o(lx1,ly1,lz1,lelt)
+
+      real*8 ydiff(lx1,ly1,lz1,lelt)  
+      real*8 wmin1, wmax1, pmin1, pmax1   
+      integer idir, e, f
+      real unity(lx1,ly1,lz1,lelv)
+
+      real tr_x(lx1,ly1,lz1,lelv),tr_y(lx1,ly1,lz1,lelv)
+      real tr_z(lx1,ly1,lz1,lelv)
+      integer trsidesets(1)
+
+
+      trsidesets=(/ 2 /)
+      call sideset_traction(tr_x,tr_y,tr_z,trsidesets,1,1)
+
+c      nrs_scptr(4) = loc(s11)
+c      nrs_scptr(5) = loc(s22)
+c      nrs_scptr(6) = loc(s33)
+      nrs_scptr(4) = loc(tr_x)
+      nrs_scptr(5) = loc(tr_y)
+      nrs_scptr(6) = loc(tr_z)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /usr_vmesh/ vmeshx(lx1,ly1,lz1,lelt),
+     & vmeshy(lx1,ly1,lz1,lelt),
+     & vmeshz(lx1,ly1,lz1,lelt)
+
+      common /usr_umesh1/ umeshy1(lx1,ly1,lz1,lelt)
+
+      integer e,ieg
+      real ucx, ucy, ucz, ucy_e 
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer idum, e
+      save    idum
+      data    idum / 0 /
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /usr_pipe/ pgmask(lelg), pfgmask(lelg),
+     & plmask(lelt), pflmask(lelt), ip_stp, iv_stp
+
+      common /usr_pipe_uvw/ vp_x(lelg,9),
+     & vp_y(lelg,9),vp_z(lelg,9),
+     & vp_p(lelg,9)
+
+      common /usr_bound/ cbc_usr(6,lelt)
+      
+      character*3 cbc_usr       
+
+      real*8 pgmask, pfgmask, plmask, pflmask
+      real*8 vp_x, vp_y, vp_z, vp_p
+      integer ip_stp, iv_istp
+
+      real*8 nwall, npipe, nw_bd1
+      real*8 wtmp
+      real*8 wtmp1(lelg)
+
+      integer e, f, eg, ipipe_mask
+      real*8 xx1, zz1, yy1 
+      real*8 nb1, nb2, nb3, nb4
+
+c      param(66) = 4.   ! These give the std nek binary i/o and are 
+c      param(67) = 4.   ! good default values
+      ifuservp=.false.
+
+c  -4.1176259999999998E-025   2.500000000000000      Xrange
+c  -1.3877790000000000E-017  0.4100000000000000      Yrange
+c  -1.7347230000000000E-018  5.0000000000000003E-002 Zrange
+
+       
+      nw_bd1 = 0.0
+      do e=1,nelt
+      do f=1,6
+
+        cbc_usr(f,e)=cbc(f,e,1)
+      if(cbc(f,e,1).ne.'E  ') then
+c            write(6,*) cbc(f,e,1)
+      endif
+        
+      if(cbc(f,e,1).eq.'SYM') then
+            boundaryID(f,e) = 4
+      elseif(cbc(f,e,1).eq.'O  ') then
+            boundaryID(f,e) = 3
+      elseif(cbc(f,e,1).eq.'v  ') then
+            boundaryID(f,e) = 1
+      elseif(cbc(f,e,1).eq.'W  ') then
+            boundaryID(f,e) = 5
+      elseif(cbc(f,e,1).eq.'mv ') then
+            boundaryID(f,e) = 2
+      endif
+  
+  
+        ipipe_mask=0
+
+        if (cbc(f,e,1).eq.'mv ') then
+           ipipe_mask=1
+           nw_bd1=nw_bd1+1.0
+        endif   
+
+        if (ipipe_mask.eq.1) then
+           eg=lglel(e)
+           npipe=npipe+1.0
+           pgmask(eg)=1.0
+           plmask(e)=1.0
+           pfgmask(eg)=f*1.0
+           pflmask(e)=f*1.0
+        endif
+
+      enddo
+      enddo 
+
+      call  gop(nw_bd1,wtmp,'+  ',1)
+
+      call  gop(pgmask,wtmp1,'+  ',lelg)
+      call  gop(pfgmask,wtmp1,'+  ',lelg)
+
+      if (nid.eq.0) write(6,*)"Test (mv. boundaries):", nw_bd1
+
+      call bcmask  ! Reset masks for velocity and pressure
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+
+c-----------------------------------------------------------------------
