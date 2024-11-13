@@ -7,7 +7,7 @@
 [submodule "contrib/moose"]
 	path = contrib/moose
   url = https://github.com/anshchaube/moose.git
-  branch = david_fsimoose
+  branch = davidfsi_24
 [submodule "contrib/SAM"]
 	path = contrib/SAM
 	url = git@gitlab-nse.egs.anl.gov:SAM/SAM.git
