@@ -1612,6 +1612,7 @@ double (*solutionPointer(const field::NekFieldEnum & field))(int)
 //        mooseError("Cardinal cannot find 'scalar03' "
 //                   "because your Nek case files do not have a scalar03 variable!");
       f = &tr_z;
+      break;
     case field::unity:
       f = &unity;
       break;
