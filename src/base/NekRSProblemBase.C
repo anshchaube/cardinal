@@ -111,6 +111,8 @@ NekRSProblemBase::validParams()
     "Constant interval (in units of number of time steps) with which to synchronize the NekRS solution");
   params.addParam<bool>("fixed_point_iterations",false,"Whether or not fixed point iterations will be used. Cardinal will look for a Postprocessor called "
   " 'fp_iteration' that receives the current iteration number from the top-level application.");
+  params.addParam<bool>("monitor_cfl",false,"Whether or not the CFL in Nek will be output to fld files for monitoring.");
+  params.addParam<bool>("monitor_jacobian",false,"Whether or not the jacobian in Nek will be output to fld files for monitoring.");
   return params;
 }
 
@@ -126,6 +128,8 @@ NekRSProblemBase::NekRSProblemBase(const InputParameters & params)
     _rho_0(getParam<Real>("rho_0")),
     _Cp_0(getParam<Real>("Cp_0")),
     _fp_iteration(getParam<bool>("fixed_point_iterations")),
+    _monitor_cfl(getParam<bool>("monitor_cfl")),
+    _monitor_jacobian(getParam<bool>("monitor_jacobian")),
     _write_fld_files(getParam<bool>("write_fld_files")),
     _disable_fld_file_output(getParam<bool>("disable_fld_file_output")),
     _n_usrwrk_slots(getParam<unsigned int>("n_usrwrk_slots")),
@@ -632,6 +636,14 @@ NekRSProblemBase::externalSolve()
   if (_t_step <= 1000)
     nekrs::verboseInfo(true);
 
+  // monitor CFL at every output step
+  if(_monitor_cfl && _is_output_step)
+    monitor_cfl();
+
+  // monitor jacobian at every output step before solve
+  if(_monitor_jacobian && _is_output_step)
+    monitor_jacobian();
+
   // Run a nekRS time step. After the time step, this also calls UDF_ExecuteStep,
   // evaluated at (step_end_time, _t_step) == (nek_step_start_time + nek_dt, t_step)
   if(_fp_iteration)
@@ -640,19 +652,35 @@ NekRSProblemBase::externalSolve()
     std::cout << "Current fixed point iteration number read in NekRSProblemBase is " << *iter << std::endl; //JUST FOR TESTING 
     if (*iter == 1)
     {
+      // monitor CFL at every output step
+      if(_monitor_cfl && _is_output_step)
+        monitor_cfl();
+   
+      // monitor jacobian at every output step before solve
+      if(_monitor_jacobian && _is_output_step)
+        monitor_jacobian();
+
       nekrs::finishStep();
       nekrs::initStep(_timestepper->nondimensionalDT(step_start_time),
                   _timestepper->nondimensionalDT(_dt),
                   _t_step);
     }
-    bool converged = false;
-    converged = nekrs::runStep(*iter++);
+
+     bool converged = false;
+     converged = nekrs::runStep(*iter++);
 
 //    nekrs::finishStep();
 
   }
   else
   {
+    // monitor CFL at every output step
+    if(_monitor_cfl && _is_output_step)
+      monitor_cfl();
+   
+    // monitor jacobian at every output step before solve
+    if(_monitor_jacobian && _is_output_step)
+      monitor_jacobian();
     // Tell NekRS what the time step size is
     nekrs::initStep(_timestepper->nondimensionalDT(step_start_time),
                   _timestepper->nondimensionalDT(_dt),
@@ -1403,6 +1431,57 @@ NekRSProblemBase::copyScratchToDevice()
 
   if (nekrs::hasMovingMesh())
     nekrs::copyDeformationToDevice();
+}
+
+void 
+NekRSProblemBase::monitor_cfl()
+{
+  std::cout<<"Dumping CFL in Nek output file:"<< std::endl; //JUST FOR TESTING 
+  nrs_t*  nrs  = (nrs_t *) nekrs::nrsPtr();
+  mesh_t* mesh = nekrs::flowMesh();
+
+  nrs->cflKernel(mesh->Nelements,
+             nrs->dt[0],
+             mesh->o_vgeo,
+             nrs->o_idH,
+             nrs->fieldOffset,
+             nrs->o_U,
+             mesh->o_U,
+             platform->o_mempool.slice0);
+
+  dfloat* cfl_out = (dfloat *) calloc(mesh->Nlocal, sizeof(dfloat));
+  dfloat* cfl_e = (dfloat *) calloc(mesh->Nelements, sizeof(dfloat));
+
+  platform->o_mempool.slice0.copyTo(cfl_e, mesh->Nelements * sizeof(dfloat));
+  for (dlong e = 0; e < mesh->Nelements; ++e)
+  {
+    for (dlong i = 0; i < mesh->Np; ++i)
+    {
+      cfl_out[e * mesh->Np + i] = cfl_e[e];
+    }
+  }
+  platform->o_mempool.slice0.copyFrom(cfl_out,mesh->Nlocal * sizeof(dfloat));
+  writeFld("cfl", nrs->timePrevious + nrs->dt[0], nrs->tstep, 1, 1, &platform->o_mempool.slice0, nrs->Nscalar);
+}
+
+void
+NekRSProblemBase::monitor_jacobian()
+{
+  nrs_t*  nrs  = (nrs_t *) nekrs::nrsPtr();
+  mesh_t* mesh = nekrs::flowMesh();
+
+  mesh->geometricFactorsKernel(mesh->Nelements,
+                    mesh->o_D,
+                    mesh->o_gllw,
+                    mesh->o_x,
+                    mesh->o_y,
+                    mesh->o_z,
+                    mesh->o_LMM,
+                    mesh->o_vgeo,
+                    mesh->o_ggeo,
+                    platform->o_mempool.slice0);
+
+  writeFld("jac", nrs->timePrevious + nrs->dt[0], nrs->tstep, 1, 1, &platform->o_mempool.slice0, nrs->Nscalar);
 }
 
 #endif

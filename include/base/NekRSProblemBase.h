@@ -62,6 +62,12 @@ public:
    */
   unsigned int firstReservedUsrwrkSlot() const { return _first_reserved_usrwrk_slot; }
 
+  /// output CFL from NekRS to fld file for monitoring
+  void monitor_cfl();
+
+  /// output jacobian from NekRS to fld file for monitoring
+  void monitor_jacobian();
+
   /// Send values from NekScalarValue userobjects to NekRS
   void sendScalarValuesToNek();
 
@@ -330,6 +336,12 @@ protected:
 
   /// If Nek is being run with fixed point iterations
   bool _fp_iteration; 
+
+  /// If the Nek CFL is being output to field files for monitoring
+  bool _monitor_cfl; 
+
+  /// If the Nek mesh's jacobian is being output to field files for monitoring
+  bool _monitor_jacobian; 
 
   /**
    * Whether to disable output file writing by NekRS and replace it by output
