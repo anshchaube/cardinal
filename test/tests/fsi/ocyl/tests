@@ -7,5 +7,6 @@
     requirement = "The oscillating cylinder case will exhibit the same "
                   "cylinder displacement in y for both the main and sub-app."
     required_objects = 'NekRSProblem'
+    max_time = 950
   []
 []
