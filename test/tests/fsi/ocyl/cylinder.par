@@ -1,0 +1,47 @@
+[OCCA]
+backend = CUDA
+deviceNumber = 0
+
+[GENERAL]
+startFrom = cylinder0.rst_pre_wave
+#startFrom = restart_n9000.fld
+
+#verbose = true
+polynomialOrder = 5
+
+stopAt = numSteps
+numSteps = 200
+
+#dt = targetCFL = 1 + max = 1 + initial = 1e-3
+dt = 5e-3
+timeStepper = tombo1
+subCyclingSteps = 1
+
+writeInterval = 1000
+
+#regularization = hpfrt + nModes=2 + scalingCoeff=10
+
+[MESH]
+#connectivityTol=0.02
+boundaryTypeMap = zeroValue,codedfixedValue,zeroValue,zeroValue  #NOTE: Not sure if zerogradient is right, i basically just want there to be no BC on those faces for the mesha
+solver = pcg+block
+residualTol = 1e-8
+#solver = none
+
+#[PROBLEMTYPE]
+#stressFormulation = true
+
+[PRESSURE]
+residualTol = 1e-11
+#preconditioner = pmg+coarse
+#smootherType = chebyshev+jac
+#initialGuess = projectionAconj+nVector=1
+
+[VELOCITY]
+boundaryTypeMap = inlet, inlet, outlet, sym
+density = 1000.0
+viscosity = 0.00095781
+residualTol = 1e-09
+
+[TEMPERATURE]
+solver = none

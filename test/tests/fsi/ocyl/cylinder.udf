@@ -1,0 +1,42 @@
+//
+// nekRS User Defined File
+//
+
+#include <math.h>
+#include "udf.hpp"
+
+void uservp(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+            occa::memory o_UProp, occa::memory o_SProp)
+{
+  mesh_t *mesh = nrs->meshV;
+
+  if (!platform->options.compareArgs("MESH SOLVER", "NONE")) {
+    // moving mesh parameters
+    const dfloat nu = 1.0;
+    auto o_mesh_diff = o_UProp + 2 * nrs->fieldOffset * sizeof(dfloat);
+    platform->linAlg->fill(nrs->meshV->Nlocal, nu, o_mesh_diff);
+  }
+}
+/* UDF Functions */
+void UDF_LoadKernels(occa::properties& kernelInfo)
+{
+}
+
+void UDF_Setup(nrs_t *nrs)
+{
+  mesh_t *mesh = nrs->meshV;
+  udf.properties = &uservp;
+//  double *tr_x = (double *) nek::scPtr(7);
+//  double *tr_y = (double *) nek::scPtr(8);
+//  double *tr_z = (double *) nek::scPtr(9);
+
+//  nrs->o_usrwrk.copyFrom(tr_x,mesh->Nlocal*sizeof(dfloat),  7*nrs->fieldOffset*sizeof(dfloat));
+//  nrs->o_usrwrk.copyFrom(tr_y,mesh->Nlocal*sizeof(dfloat),  8*nrs->fieldOffset*sizeof(dfloat));
+//  nrs->o_usrwrk.copyFrom(tr_z,mesh->Nlocal*sizeof(dfloat),  9*nrs->fieldOffset*sizeof(dfloat));
+}
+
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+  nek::ocopyToNek(time, tstep);
+  nek::userchk();
+}

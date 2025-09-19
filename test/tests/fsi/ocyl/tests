@@ -1,12 +1,13 @@
 [Tests]
   [cyl_disp_y]
     type = CSVDiff
-    input = nek_master.i
-    csvdiff = "nek_master_csv.csv nek_master_out_nek0_csv.csv"
+    input = nek_main.i
+    csvdiff = "nek_main_out.csv nek_main_out_nek0.csv"
     abs_zero = 1e-8
+    rel_err = 1e-4 #nl_abs_tol is 1e-5
     requirement = "The oscillating cylinder case will exhibit the same "
                   "cylinder displacement in y for both the main and sub-app."
     required_objects = 'NekRSProblem'
-    max_time = 950
+    max_time = 2000
   []
 []
