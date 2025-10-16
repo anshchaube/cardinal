@@ -1415,7 +1415,7 @@ tr_x(const int id)
 //  nrs_t * nrs = (nrs_t *)nrsPtr();
 //  return nrs->usrwrk[indices.tr_x + id];
   double * tr = (double *) nek::scPtr(4);
-  return tr[indices.tr_x + id];
+  return tr[id];
 
 }
 
@@ -1425,7 +1425,7 @@ tr_y(const int id)
 //  nrs_t * nrs = (nrs_t *)nrsPtr();
 //  return nrs->usrwrk[indices.tr_y + id];
   double * tr = (double *) nek::scPtr(5);
-  return tr[indices.tr_y + id];
+  return tr[id];
 }
 
 double
@@ -1434,7 +1434,7 @@ tr_z(const int id)
 //  nrs_t * nrs = (nrs_t *)nrsPtr();
 //  return nrs->usrwrk[indices.tr_z + id];
   double * tr = (double *) nek::scPtr(6);
-  return tr[indices.tr_z + id];
+  return tr[id];
 }
 
 double
