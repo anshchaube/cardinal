@@ -1,0 +1,387 @@
+      include "traction.f"
+
+c-----------------------------------------------------------------------
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+
+      return
+      end
+
+C-----------------------------------------------------------------------
+      subroutine userchk()
+      include 'SIZE'
+      include 'TOTAL'
+      
+      common /nrsscptr/ nrs_scptr(9)
+      integer*8         nrs_scptr
+
+      real tracx(lx1,ly1,lz1,lelv),tracy(lx1,ly1,lz1,lelv),
+     $     tracz(lx1,ly1,lz1,lelv)
+c      real trxmax,trymax,trzmax,trxmin,trymin,trzmin
+c
+c      real uinmax
+c      integer js1,jf1,jskip1,js2,jf2,jskip2,ie
+c
+      integer ntot
+      integer trsidesets(1)
+c
+c      integer step_now, step_prev
+c      common /steps/ step_now, step_prev
+c
+cc     Point for torque calculation
+c      real x0(3)
+c      data x0 /3*0.0/
+c
+c      integer bIDs(1), iobj_wall(1)
+c      common /local_obj/ iobj_wall
+c
+c      real geid(lx1,ly1,lz1,lelv)
+c
+      ntot = lx1*ly1*lz1*nelv
+c      call rzero(geid,ntot)
+c
+cc     drag calculation
+c      if(istep.eq.0) then
+c        step_prev = istep-1
+c        bIDs(1) = 2
+c        call create_obj(iobj_wall(1),bIDs,1)
+c
+c        do ie=1,nelv
+c          do i=1,lx1*ly1*lz1
+c            geid(i,1,1,ie) = lglel(ie)*1.0
+c          enddo
+c        enddo
+c        call outpost(geid,vy,vz,pr,t,'eid')
+c      endif
+c
+c      step_now = istep     
+c
+c      ! calc the drag
+c      if (step_prev.ne.step_now) then
+c        call estimate_strouhal
+c        call torque_calc(1.,x0,.true.,.false.)
+c      endif
+c      ! update steps
+c      step_prev = step_now
+c
+c      computecfl=0
+c      !call pressure_integral()
+c      if (computecfl.eq.1) then
+c      ntot = lx1*ly1*lz1*nelv
+c      dt = 5e-3    ! dt has to mach the value in par file
+c      call compute_cfl(cfl,vx,vy,vz,dt)
+c      if(nid.eq.0) write(6,*) "cfl in nek is ",cfl
+c      if (cfl.gt.3.0) then
+c      call outpost(vx,vy,vz,cflf,pr,'cfl')
+c      clf_max = glmax(cflf,ntot)
+c      clf_max_x = 0.0
+c      clf_max_y = 0.0
+c      clf_max_z = 0.0
+c      do i =1,ntot
+c         if(cflf(i,1,1,1).ge.clf_max) then
+c            clf_max_x = xm1(i,1,1,1)
+c            clf_max_y = ym1(i,1,1,1)
+c            clf_max_z = zm1(i,1,1,1)
+c         endif
+c      enddo
+c      vec = sqrt(clf_max_x**2 + clf_max_y**2+ clf_max_z**2)
+c      if(nid.eq.0) write(6,*) "vec",vec
+c      if(vec.gt.0.0) then
+c        write(6,*) "max clf xyz: ", clf_max_x,clf_max_y,clf_max_z
+c      endif
+c      endif
+c      endif
+c
+cc     for traction calculation
+c
+cc     calculating traction
+c
+      trsidesets=(/ 2 /)
+      call sideset_traction(tracx,tracy,tracz,trsidesets,1,1)
+
+      nrs_scptr(4) = loc(tracx)
+      nrs_scptr(5) = loc(tracy)
+      nrs_scptr(6) = loc(tracz)
+c
+c      if(mod(istep,1).eq.0) then
+c       !call outpost(tracx,tracy,tracz,pr,t,'tri')
+c      endif
+c
+c      trxmax = glmax(tracx,ntot)
+c      trymax = glmax(tracy,ntot)
+c      trzmax = glmax(tracz,ntot)
+c      trxmin = glmin(tracx,ntot)
+c      trymin = glmin(tracy,ntot)
+c      trzmin = glmin(tracz,ntot)
+c
+c      if(nio.eq.0) then
+c        write(*,15) trxmax,trymax,trzmax
+c        write(*,16) trxmin,trymin,trzmin
+c      endif
+c
+c
+c15    format(1p3e16.8,': max traction x/y/z')
+c16    format(1p3e16.8,': min traction x/y/z')
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat()   ! This routine to modify element vertices
+      include 'SIZE'
+      include 'TOTAL'
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ntot,i
+
+      ntot = lx1*ly1*lz1*nelv
+
+      do i =1,ntot
+         xm1(i,1,1,1)=xm1(i,1,1,1)*0.01
+         ym1(i,1,1,1)=ym1(i,1,1,1)*0.01
+         zm1(i,1,1,1)=zm1(i,1,1,1)*0.01
+      enddo
+
+      do iel=1,nelv
+      do ifc=1,2*ndim
+        boundaryID(ifc,iel) = 0
+        id_face = bc(5,ifc,iel,1)
+        if (id_face.eq.1) then        ! surface 1 for inlet
+           !cbc(ifc,iel,1) = 'v  '
+           boundaryID(ifc,iel) = 1
+        elseif (id_face.eq.2) then    ! surface 2 for cylinder
+           !cbc(ifc,iel,1) = 'W  '
+           boundaryID(ifc,iel) = 2
+        elseif (id_face.eq.3) then    ! surface 3 for outlet
+           !cbc(ifc,iel,1) = 'O  '
+           boundaryID(ifc,iel) = 3
+        elseif (id_face.eq.4) then    ! surface 4 for sym
+           !cbc(ifc,iel,1) = 'SYM'
+           boundaryID(ifc,iel) = 4
+        elseif (id_face.eq.5) then    ! surface 5 for periodic_1
+           !cbc(ifc,iel,1) = 'P  '
+           !boundaryID(ifc,iel) = 5
+        elseif (id_face.eq.6) then    ! surface 6 for periodic_2
+           !cbc(ifc,iel,1) = 'P  '
+           !boundaryID(ifc,iel) = 6
+        endif
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3()
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-------------------------------------------------------------------------
+c      subroutine avg_custom
+c      implicit none
+c
+c      include 'SIZE'
+c      include 'TOTAL'
+c      real*8 vx_avg(lx1,ly1,lz1,lelt),vy_avg(lx1,ly1,lz1,lelt),
+c     & vz_avg(lx1,ly1,lz1,lelt),t_avg(lx1,ly1,lz1,lelt)
+c      real*8 vx_rms(lx1,ly1,lz1,lelt),vy_rms(lx1,ly1,lz1,lelt),
+c     & vz_rms(lx1,ly1,lz1,lelt)
+c      real Tx(lx1,ly1,lz1,lelt)
+c      real Ty(lx1,ly1,lz1,lelt)
+c      real Tz(lx1,ly1,lz1,lelt)
+c      real TKE(lx1,ly1,lz1,lelt)
+c      integer e,i,j,k,iip,iiq
+c
+c      do i=1,lx1
+c      do j=1,ly1
+c      do k=1,lz1
+c      do e=1,lelt
+c         vx_avg(i,j,k,e)=0.0
+c         vy_avg(i,j,k,e)=0.0
+c         vz_avg(i,j,k,e)=0.0
+c         vx_rms(i,j,k,e)=0.0
+c         vy_rms(i,j,k,e)=0.0
+c         vz_rms(i,j,k,e)=0.0
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c
+c      do iip=1,15
+c      do iiq=1,10
+c
+c      call blank(initc(1),70)
+c      write(initc(1),7)iiq,iip
+c
+c   7       format('/gpfs/alpine/nfu106/scratch/dzr5281/TAMU_new/'
+c     &'AVGRun',i2.2,'/avgtamu3_67peb0.f000',i2.2)
+c      call setics
+c
+c      do i=1,lx1
+c      do j=1,ly1
+c      do k=1,lz1
+c      do e=1,lelt
+c         vx_avg(i,j,k,e)=vx_avg(i,j,k,e)+vx(i,j,k,e)/(150.0)
+c         vy_avg(i,j,k,e)=vy_avg(i,j,k,e)+vy(i,j,k,e)/(150.0)
+c         vz_avg(i,j,k,e)=vz_avg(i,j,k,e)+vz(i,j,k,e)/(150.0)
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c
+c      enddo
+c      enddo
+c
+c      do i=1,lx1
+c      do j=1,ly1
+c      do k=1,lz1
+c      do e=1,lelt
+c         vx(i,j,k,e)   = vx_avg(i,j,k,e)
+c         vy(i,j,k,e)   = vy_avg(i,j,k,e)
+c         vz(i,j,k,e)   = vz_avg(i,j,k,e)
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c
+c      call outpost2(vx,vy,vz,pr,t,ldimt,'av2')
+c
+c      do iip=1,15
+c      do iiq=1,10
+c
+c      call blank(initc(1),70)
+c      write(initc(1),8)iiq,iip
+c   8       format('/gpfs/alpine/nfu106/scratch/dzr5281/TAMU_new/'
+c     &     'AVGRun',i2.2,'/rmstamu3_67peb0.f000',i2.2)
+c      call setics
+c
+c      do i=1,lx1
+c      do j=1,ly1
+c      do k=1,lz1
+c      do e=1,lelt
+c         vx_rms(i,j,k,e)=vx_rms(i,j,k,e)+vx(i,j,k,e)/(150.0)
+c         vy_rms(i,j,k,e)=vy_rms(i,j,k,e)+vy(i,j,k,e)/(150.0)
+c         vz_rms(i,j,k,e)=vz_rms(i,j,k,e)+vz(i,j,k,e)/(150.0)
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c
+c      enddo
+c      enddo
+c
+c      do i=1,lx1
+c      do j=1,ly1
+c      do k=1,lz1
+c      do e=1,lelt
+c         Tx(i,j,k,e)=0.5*(vx_rms(i,j,k,e)-(vx_avg(i,j,k,e))**2)
+c         Ty(i,j,k,e)=0.5*(vy_rms(i,j,k,e)-(vy_avg(i,j,k,e))**2)
+c         Tz(i,j,k,e)=0.5*(vz_rms(i,j,k,e)-(vz_avg(i,j,k,e))**2)
+c	 TKE(i,j,k,e)=Tx(i,j,k,e)+Ty(i,j,k,e)+Tz(i,j,k,e)
+c      enddo
+c      enddo
+c      enddo
+c      enddo
+c
+c      call outpost2(Tx,Ty,Tz,TKE,t,ldimt,'TKE')
+c      return
+c      end
+c-----------------------------------------------------------------------
+c      subroutine pressure_integral()
+c
+c      include 'SIZE'
+c      include 'TOTAL'
+c
+c      real p_integral,norm(3)
+c      integer ifc,iel
+c
+c
+c      do iel=1,nelv
+c      do ifc=1,2*ndim
+c      if (boundaryID(ifc,iel).eq.2) then
+c         !call getSnormal(norm,i,j,k,ifc,iel) !This is not the correct way to get the normal I guess
+c         call surface_int(sint,sarea,p,iel,ifc)
+c         p_integral = p_integral + sint*0.1
+c      endif
+c      enddo
+c      enddo
+c
+c      p_integral = glsum(p_integral,1)
+c      if (nid.eq.0) then
+c         write(6,*) "Integral of p dot n is: ", p_integral
+c      endif
+c      return
+c      end
+c-----------------------------------------------------------------------
+c      subroutine estimate_strouhal
+c
+c      include 'SIZE'
+c      include 'TOTAL'
+c
+c      real tlast,vlast,tcurr,vcurr,t0,t1
+c      save tlast,vlast,tcurr,vcurr,t0,t1
+c      data tlast,vlast,tcurr,vcurr,t0,t1 / 6*0 /
+c
+c      integer e,eg,eg0,e0
+c
+c      eg0 = 3683          ! Identify element/processor in wake
+c      mid = gllnid(eg0)
+c      e0  = gllel (eg0)
+c
+c      st  = 0
+c
+c      if (nid.eq.mid) then
+c
+c         tlast = tcurr
+c         vlast = vcurr
+c
+c         tcurr = time
+c         vcurr = vy (1,ny1,1,e0)
+c
+c         xcurr = xm1(1,ny1,1,e0)
+c         ycurr = ym1(1,ny1,1,e0)
+c
+c         write(6,2) istep,time,vcurr,xcurr,ycurr
+c    2    format(i9,1p4e13.5,' vcurr')
+c
+c         if (vlast.gt.0.and.vcurr.le.0) then ! zero crossing w/ negative slope
+c            t0  = t1
+c            t1  = tlast + (tcurr-tlast)*(vlast-0)/(vlast-vcurr)
+c            per = t1-t0
+c            if (per.gt.0) st = 1./per
+c         endif
+c      endif
+c
+c      st = glmax(st,1)
+c
+c      n  = nx1*ny1*nz1*nelv
+c      ux = glamax(vx,n)
+c      uy = glamax(vy,n)
+c
+c      if (nid.eq.0.and.st.gt.0) write(6,1) istep,time,st,ux,uy
+c    1 format(i5,1p4e12.4,' Strouhal')
+c
+c      return
+c      end
+cc-----------------------------------------------------------------------
