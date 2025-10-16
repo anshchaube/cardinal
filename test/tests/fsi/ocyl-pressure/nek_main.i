@@ -27,9 +27,7 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
 
 [Problem]
   type = FEProblem
-  extra_tag_vectors = 'tag_p tag_tr'
-#  restart_file_base = nek_master_checkpoint_cp/LATEST # restart from LATEST time
-#  force_restart = true # force restart sub app only
+  extra_tag_vectors = 'tag_p'
 []
 
 [Mesh]
@@ -137,50 +135,28 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
     boundary = '1 2'
     value = 0.0
   []
-[pressure_x]
-  type = CoupledPressureBC
-  pressure = pressure_scaled
-  variable = disp_x
-  component = 0
-  boundary = 'interface'
-[]
-[pressure_y]
-  type = CoupledPressureBC
-  pressure = pressure_scaled
-  variable = disp_y
-  component = 1
-  boundary = 'interface'
-  extra_vector_tags = 'tag_p'
-[]
-[pressure_z]
-  type = CoupledPressureBC
-  pressure = pressure_scaled
-  variable = disp_z
-  component = 2
-  boundary = 'interface'
-[]
-#[viscous_x]
-#  type = CoupledTractionBC
-#  traction = tr_x
-#  variable = disp_x
-#  component = 0
-#  boundary = '3'
-#[]
-#[viscous_y]
-#  type = CoupledTractionBC
-#  traction = tr_y
-#  variable = disp_y
-#  component = 1
-#  boundary = '3'
-#  extra_vector_tags = 'tag_tr'
-#[]
-#[viscous_z]
-#  type = CoupledTractionBC
-#  traction = tr_z
-#  variable = disp_z
-#  component = 2
-#  boundary = '3'
-#[]
+  [pressure_x]
+    type = CoupledPressureBC
+    pressure = pressure
+    variable = disp_x
+    component = 0
+    boundary = 'interface'
+  []
+  [pressure_y]
+    type = CoupledPressureBC
+    pressure = pressure
+    variable = disp_y
+    component = 1
+    boundary = 'interface'
+    extra_vector_tags = 'tag_p'
+  []
+  [pressure_z]
+    type = CoupledPressureBC
+    pressure = pressure
+    variable = disp_z
+    component = 2
+    boundary = 'interface'
+  []
 []
 
 [Materials]
@@ -219,13 +195,6 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
 [AuxVariables]
   [pressure]
   []
-  [pressure_scaled]
-  []
-  [./von_mises]
-  #Dependent variable used to visualize the Von Mises stress
-  order = CONSTANT
-  family = MONOMIAL
-  [../]
 
   #NEWMARK VARIABLES
   [vel_x]
@@ -246,17 +215,7 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
   [accel_z]
       initial_condition = 0.0
   []
-  [stress_yy]
-    order = CONSTANT
-    family = MONOMIAL
-  []
-  [strain_yy]
-    order = CONSTANT
-    family = MONOMIAL
-  []
   [tag_p]
-  []
-  [tag_tr]
   []
   [tr_x]
   []
@@ -265,96 +224,54 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
   [tr_z]
   []
 []
-[Functions]
-  [move_y]
-  type = ParsedFunction
-  expression = 0.25*sin(t)
-  #expression = 5e-3
-  []
-[]
 
 [AuxKernels]
-  [pressure_scaled]
-    type = ParsedAux
-    variable = pressure_scaled
-    coupled_variables = 'pressure'
-    expression =  pressure
-  []
-  [./von_mises_kernel]
-    #Calculates the von mises stress and assigns it to von_mises
-    type = RankTwoScalarAux
-    variable = von_mises
-    rank_two_tensor = stress
-    execute_on = timestep_end
-    scalar_type = VonMisesStress
-  [../]
-
   #NEWMARK Variables
   [accel_x]
-  type = NewmarkAccelAux
-  variable = accel_x
-  displacement = disp_x
-  velocity = vel_x
-  beta = ${beta}
-[]
-[vel_x]
-  type = NewmarkVelAux
-  variable = vel_x
-  acceleration = accel_x
-  gamma = ${gamma}
-[]
-[accel_y]
-  type = NewmarkAccelAux
-  variable = accel_y
-  displacement = disp_y
-  velocity = vel_y
-  beta = ${beta}
-[]
-[vel_y]
-  type = NewmarkVelAux
-  variable = vel_y
-  acceleration = accel_y
-  gamma = ${gamma}
-[]
-[accel_z]
-  type = NewmarkAccelAux
-  variable = accel_z
-  displacement = disp_z
-  velocity = vel_z
-  beta = ${beta}
-[]
-[vel_z]
-  type = NewmarkVelAux
-  variable = vel_z
-  acceleration = accel_z
-  gamma = ${gamma}
-[]
-[stress_yy]
-  type = RankTwoAux
-  rank_two_tensor = stress
-  variable = stress_yy
-  index_i = 1
-  index_j = 1
-[]
-[strain_yy]
-  type = RankTwoAux
-  rank_two_tensor = total_strain
-  variable = strain_yy
-  index_i = 1
-  index_j = 1
-[]
-[tag_p]
-  type = TagVectorAux
-  variable = tag_p
-  v = disp_y
-  vector_tag = 'tag_p'
-[]
-[tag_tr]
-  type = TagVectorAux
-  variable = tag_tr
-  v = disp_y
-  vector_tag = 'tag_tr'
-[]
+    type = NewmarkAccelAux
+    variable = accel_x
+    displacement = disp_x
+    velocity = vel_x
+    beta = ${beta}
+  []
+  [vel_x]
+    type = NewmarkVelAux
+    variable = vel_x
+    acceleration = accel_x
+    gamma = ${gamma}
+  []
+  [accel_y]
+    type = NewmarkAccelAux
+    variable = accel_y
+    displacement = disp_y
+    velocity = vel_y
+    beta = ${beta}
+  []
+  [vel_y]
+    type = NewmarkVelAux
+    variable = vel_y
+    acceleration = accel_y
+    gamma = ${gamma}
+  []
+  [accel_z]
+    type = NewmarkAccelAux
+    variable = accel_z
+    displacement = disp_z
+    velocity = vel_z
+    beta = ${beta}
+  []
+  [vel_z]
+    type = NewmarkVelAux
+    variable = vel_z
+    acceleration = accel_z
+    gamma = ${gamma}
+  []
+  [tag_p]
+    type = TagVectorAux
+    variable = tag_p
+    v = disp_y
+    vector_tag = 'tag_p'
+  []
 []
 
 [MultiApps]
@@ -375,7 +292,6 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
     direction = to_multiapp
     multi_app = nek
     variable = disp_x
-#  source_boundary = 2
   []
   [bdisp_y_to_nek]
     type = MultiAppNearestNodeTransfer
@@ -383,7 +299,6 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
     direction = to_multiapp
     multi_app = nek
     variable = disp_y
-#  source_boundary = 2
   []
   [bdisp_z_to_nek]
     type = MultiAppNearestNodeTransfer
@@ -392,30 +307,15 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
     multi_app = nek
     variable = disp_z
   []
+
+
   [pressure_from_nek]
     type = MultiAppGeometricInterpolationTransfer
     source_variable = P
     from_multi_app = nek
     variable = pressure
   []
-#  [tr_x_from_nek]
-#    type = MultiAppGeometricInterpolationTransfer
-#    source_variable = tr_x
-#    from_multi_app = nek
-#    variable = tr_x
-#  []
-#  [tr_y_from_nek]
-#    type = MultiAppGeometricInterpolationTransfer
-#    source_variable = tr_y
-#    from_multi_app = nek
-#    variable = tr_y
-#  []
-#  [tr_z_from_nek]
-#    type = MultiAppGeometricInterpolationTransfer
-#    source_variable = tr_z
-#    from_multi_app = nek
-#    variable = tr_z
-#  []
+
   [iteration]
     type = MultiAppPostprocessorTransfer
     to_postprocessor = fp_iteration
@@ -425,16 +325,6 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
 []
 
 [Postprocessors]
-#  [pt_disp_x]
-#    type = PointValue
-#    point = '0.1998 0.00004996 0.01'
-#    variable = disp_x
-#  []
-#  [pt_disp_y]
-#    type = PointValue
-#    point = '0.1998 0.00004996 0.01'
-#    variable = disp_y
-#  []
   [avg_disp_y]
     type = ElementAverageValue
     variable = disp_y
@@ -472,11 +362,6 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
     variable = tag_p
     boundary = '3'
   []
-  [viscous_force]
-    type = NodalSum
-    variable = tag_tr
-    boundary = '3'
-  []
   [spring_e]
     type = ConstantPostprocessor
     value = ${spring_modulus}
@@ -490,27 +375,18 @@ spring_modulus = ${fparse k_star*L_cyl*(0.5*rho*u_inf*u_inf)*L_spring/(spring_ar
 []
 
 [Outputs]
-  exodus = true
+  exodus = false
   csv = true
 #  interval = 1
   print_linear_residuals = false
   show = 'ystar_main'
-  [checkpoint]
-    type  = Checkpoint
-    num_files = 2
-    displaced_mesh = true
-    wall_time_checkpoint = false
-    time_step_interval = 1000
-  []
 []
 
-#[Preconditioning]
-#  [SMP]
-#    #Creates the entire Jacobian, for the Newton solve
-#    type = SMP
-##    full = true
-#  []
-#[]
+[Preconditioning]
+  [SMP]
+    type = SMP
+  []
+[]
 
 [Executioner]
   type = Transient
