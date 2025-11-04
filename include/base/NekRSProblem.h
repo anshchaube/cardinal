@@ -245,6 +245,15 @@ protected:
   /// displacement in z for all nodes from MOOSE, for moving mesh problems
   double * _displacement_z = nullptr;
 
+  /// displacement in x for all nodes from MOOSE, for moving mesh problems
+  double * _prev_displacement_x = nullptr;
+
+  /// displacement in y for all nodes from MOOSE, for moving mesh problems
+  double * _prev_displacement_y = nullptr;
+
+  /// displacement in z for all nodes from MOOSE, for moving mesh problems
+  double * _prev_displacement_z = nullptr;
+
   /// mesh velocity for a given element, used internally for calculating mesh velocity over one element
   double * _mesh_velocity_elem = nullptr;
 
@@ -262,6 +271,15 @@ protected:
 
   /// z-displacment transfer variable read for moving mesh problems
   unsigned int _disp_z_var;
+
+  /// x-displacment transfer variable read for moving mesh problems
+  unsigned int _prev_disp_x_var;
+
+  /// y-displacment transfer variable read for moving mesh problems
+  unsigned int _prev_disp_y_var;
+
+  /// z-displacment transfer variable read for moving mesh problems
+  unsigned int _prev_disp_z_var;
 
   /// volumetric heat source variable read from by nekRS
   unsigned int _heat_source_var;

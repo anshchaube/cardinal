@@ -183,6 +183,10 @@ NekRSProblem::NekRSProblem(const InputParameters & params)
     _displacement_x = (double *)calloc(n_entries, sizeof(double));
     _displacement_y = (double *)calloc(n_entries, sizeof(double));
     _displacement_z = (double *)calloc(n_entries, sizeof(double));
+    _prev_displacement_x = (double *)calloc(n_entries, sizeof(double));
+    _prev_displacement_y = (double *)calloc(n_entries, sizeof(double));
+    _prev_displacement_z = (double *)calloc(n_entries, sizeof(double));
+
 
     if (nekrs::hasBlendingSolver())
       _mesh_velocity_elem = (double *)calloc(n_entries, sizeof(double));
@@ -368,16 +372,19 @@ NekRSProblem::sendBoundaryDeformationToNek()
         continue;
 
       mapFaceDataToNekFace(e, _disp_x_var, 1.0, &_displacement_x);
+      mapFaceDataToNekFace(e, _prev_disp_x_var, 1.0, &_prev_displacement_x);
       calculateMeshVelocity(e, field::mesh_velocity_x);
       if (*_iter !=1 || !_fp_iteration || _t_step==1) //DR: We dont want to update the mesh velocity on the first iteration it will be 0, instead we want to assume the velocity from the previous calculation
         writeBoundarySolution(e, field::mesh_velocity_x, _mesh_velocity_elem);
 
       mapFaceDataToNekFace(e, _disp_y_var, 1.0, &_displacement_y);
+      mapFaceDataToNekFace(e, _prev_disp_y_var, 1.0, &_prev_displacement_y);
       calculateMeshVelocity(e, field::mesh_velocity_y);
       if (*_iter !=1 || !_fp_iteration || _t_step==1)
         writeBoundarySolution(e, field::mesh_velocity_y, _mesh_velocity_elem);
         
       mapFaceDataToNekFace(e, _disp_z_var, 1.0, &_displacement_z);
+      mapFaceDataToNekFace(e, _prev_disp_z_var, 1.0, &_prev_displacement_z);
       calculateMeshVelocity(e, field::mesh_velocity_z);
       if (*_iter !=1 || !_fp_iteration || _t_step==1)
         writeBoundarySolution(e, field::mesh_velocity_z, _mesh_velocity_elem);
@@ -393,14 +400,17 @@ NekRSProblem::sendBoundaryDeformationToNek()
         continue;
 
       mapFaceDataToNekVolume(e, _disp_x_var, 1.0, &_displacement_x);
+      mapFaceDataToNekVolume(e, _prev_disp_x_var, 1.0, &_prev_displacement_x);
       calculateMeshVelocity(e, field::mesh_velocity_x);
       writeVolumeSolution(e, field::mesh_velocity_x, _mesh_velocity_elem);
 
       mapFaceDataToNekVolume(e, _disp_y_var, 1.0, &_displacement_y);
+      mapFaceDataToNekVolume(e, _prev_disp_y_var, 1.0, &_prev_displacement_y);
       calculateMeshVelocity(e, field::mesh_velocity_y);
       writeVolumeSolution(e, field::mesh_velocity_y, _mesh_velocity_elem);
 
       mapFaceDataToNekVolume(e, _disp_z_var, 1.0, &_displacement_z);
+      mapFaceDataToNekVolume(e, _prev_disp_z_var, 1.0, &_prev_displacement_z);
       calculateMeshVelocity(e, field::mesh_velocity_z);
       writeVolumeSolution(e, field::mesh_velocity_z, _mesh_velocity_elem);
     }
@@ -832,6 +842,18 @@ NekRSProblem::addExternalVariables()
     checkDuplicateVariableName("disp_z");
     addAuxVariable("MooseVariable", "disp_z", var_params);
     _disp_z_var = _aux->getFieldVariable<Real>(0, "disp_z").number();
+
+    checkDuplicateVariableName("prev_disp_x");
+    addAuxVariable("MooseVariable", "prev_disp_x", var_params);
+    _prev_disp_x_var = _aux->getFieldVariable<Real>(0, "prev_disp_x").number();
+
+    checkDuplicateVariableName("prev_disp_y");
+    addAuxVariable("MooseVariable", "prev_disp_y", var_params);
+    _prev_disp_y_var = _aux->getFieldVariable<Real>(0, "prev_disp_y").number();
+
+    checkDuplicateVariableName("prev_disp_z");
+    addAuxVariable("MooseVariable", "prev_disp_z", var_params);
+    _prev_disp_z_var = _aux->getFieldVariable<Real>(0, "prev_disp_z").number();
   }
 }
 
@@ -849,32 +871,32 @@ NekRSProblem::calculateMeshVelocity(int e, const field::NekWriteEnum & field)
   {
     case field::mesh_velocity_x:
       displacement = _displacement_x;
-      prev_disp = _nek_mesh->prev_disp_x().data();
+      prev_disp  = _prev_displacement_x;
       disp_field = field::x_displacement;
       break;
     case field::mesh_velocity_y:
       displacement = _displacement_y;
-      prev_disp = _nek_mesh->prev_disp_y().data();
+      prev_disp  = _prev_displacement_y;
       disp_field = field::y_displacement;
       break;
     case field::mesh_velocity_z:
       displacement = _displacement_z;
-      prev_disp = _nek_mesh->prev_disp_z().data();
+      prev_disp  = _prev_displacement_z;
       disp_field = field::z_displacement;
       break;
     default:
       mooseError("Unhandled NekWriteEnum in NekRSProblem::calculateMeshVelocity!\n");
   }
-  if(*_iter == 1 && _fp_iteration)
-  {
-    _nek_mesh->updateDisplacement(e, displacement, disp_field);
-  }
+//  if(*_iter == 1 && _fp_iteration)
+//  {
+//    _nek_mesh->updateDisplacement(e, displacement, disp_field);
+//  }
   for (int i=0; i <len; i++)
     if (_t_step == 1 && *_iter == 1)
       _mesh_velocity_elem[i] = _initial_mesh_vel;
     else
     {
-    _mesh_velocity_elem[i] = (displacement[i] - prev_disp[(e*len) + i])/dt/_U_ref;
+    _mesh_velocity_elem[i] = (displacement[i] - prev_disp[i])/dt/_U_ref;
     //std::cout << "DISPLACEMENT: " << displacement[i] <<std::endl;
     //std::cout << "PREVIOUS DISPLACEMENT: " << prev_disp[(e*len) + i] <<std::endl;
     }
