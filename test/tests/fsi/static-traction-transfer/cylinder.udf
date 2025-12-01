@@ -1,0 +1,63 @@
+//
+// nekRS User Defined File
+//
+
+#include <math.h>
+#include "udf.hpp"
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <vector>
+
+static dfloat t_prev = 0.0;
+static int iter = 0;
+
+#ifdef __okl__
+
+#include "cylinder.oudf"
+
+#endif
+
+void uservp(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+            occa::memory o_UProp, occa::memory o_SProp)
+{
+  mesh_t *mesh = nrs->meshV;
+
+  if (!platform->options.compareArgs("MESH SOLVER", "NONE")) {
+    // moving mesh parameters
+    const dfloat nu = 1.0;
+    auto o_mesh_diff = o_UProp + 2 * nrs->fieldOffset * sizeof(dfloat);
+    platform->linAlg->fill(nrs->meshV->Nlocal, nu, o_mesh_diff);
+  }
+}
+
+/* UDF Functions */
+void UDF_LoadKernels(occa::properties& kernelInfo)
+{
+}
+
+void UDF_Setup(nrs_t *nrs)
+{
+  mesh_t *mesh = nrs->meshV;
+  udf.properties = &uservp;
+}
+
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+  if (time != t_prev)
+  {
+    t_prev = time;
+    iter = 0;
+  }
+
+  iter++;
+  if (platform->comm.mpiRank == 0)
+    std::cout<<"Iteration count in Nek UDF:"<<iter<<std::endl;
+  dfloat dt_now = nrs->dt[0];
+  int boundaryID = 2;
+
+  nek::ocopyToNek(time, tstep);
+  nek::userchk();
+
+}
