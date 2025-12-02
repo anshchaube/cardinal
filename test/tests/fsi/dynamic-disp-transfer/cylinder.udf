@@ -208,6 +208,8 @@ void applyMeshVelocitiesToUsrwrk(nrs_t *nrs, int meshv_indices[3], int filtv_ind
   std::copy(filt_meshv_x.begin(), filt_meshv_x.end(), nrs->usrwrk + filtv_indices[0] * fo);
   std::copy(filt_meshv_y.begin(), filt_meshv_y.end(), nrs->usrwrk + filtv_indices[1] * fo);
   std::copy(filt_meshv_z.begin(), filt_meshv_z.end(), nrs->usrwrk + filtv_indices[2] * fo);
+
+  nrs->o_usrwrk.copyFrom(nrs->usrwrk);
 }
 
 void outputMeshVelCSV(nrs_t *nrs, dfloat time, int tstep, int bID,
