@@ -89,7 +89,7 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
   csv = true
   console = true
 #  interval = 1
-  show = 'el2_dy ystar_sub average_disp_in_nek'
+  show = 'el2_dy ystar_sub scaled_area'
 []
 
 [Postprocessors]
@@ -106,10 +106,17 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
     function = "average_disp_in_nek/${fparse D}"
     pp_names = "average_disp_in_nek"
   []
-  [area_side7]
+  [area_side2]
     type = NekSideIntegral
     field = unity
     boundary = '2'
+    use_displaced_mesh = true
+  []
+  [scaled_area]
+    type = ParsedPostprocessor
+    function = 'area_side2*1e9'
+    pp_names = 'area_side2'
+    use_displaced_mesh = true
   []
   [el2_dy]
     type = ElementL2Error

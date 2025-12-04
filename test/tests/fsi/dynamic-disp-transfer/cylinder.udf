@@ -44,9 +44,6 @@ void velocityDirichletConditions(bcData *bc)
     bc->u = bc->usrwrk[bc->idM + filtv_indices[0]*bc->fieldOffset];
     bc->v = bc->usrwrk[bc->idM + filtv_indices[1]*bc->fieldOffset];
     bc->w = bc->usrwrk[bc->idM + filtv_indices[2]*bc->fieldOffset];
-    //bc->u = 0.0;
-    //bc->v = 0.0;
-    //bc->w = 0.0;
   }
   else
   {
@@ -58,10 +55,6 @@ void velocityDirichletConditions(bcData *bc)
 
 void pressureDirichletConditions(bcData *bc)
 {
-  //const dfloat iU0delta = 20.0;
-  //const dfloat un = bc->u*bc->nx + bc->v*bc->ny + bc->w*bc->nz;
-  //const dfloat s0 = 0.5 * (1.0 - tanh(un*iU0delta));
-  //bc->p = 1.0-0.5 * (bc->u*bc->u + bc->v*bc->v + bc->w*bc->w) * s0;
    bc->p = 1.0;
 }
 
@@ -70,9 +63,6 @@ void meshVelocityDirichletConditions(bcData *bc)
   static int meshv_indices[3] = { 7, 8, 9};
   if(bc->id==2)
   {
-    //bc->meshu = 0.0;
-    //bc->meshv = 0.2;
-    //bc->meshw = 0.0;
     bc->meshu = bc->usrwrk[bc->idM + meshv_indices[0]*bc->fieldOffset];
     bc->meshv = bc->usrwrk[bc->idM + meshv_indices[1]*bc->fieldOffset];
     bc->meshw = bc->usrwrk[bc->idM + meshv_indices[2]*bc->fieldOffset];
@@ -180,7 +170,8 @@ calculateMeshVelocity(dfloat dt, int bID, nrs_t *nrs,
          int i = mesh->vmapM[offset + j];
          meshv[i] = (disp[i] - old_disp[i])/dt;
          //meshv[i] = disp[i];
-         std::cout<<"MESH VELOCITY CALC IN UDF:"<<meshv[i]<<std::endl;
+         if (std::abs(meshv[i])> 1e-10)
+           std::cout<<"NON-ZERO MESH VELOCITY CALC IN UDF:"<<meshv[i]<<std::endl;
        }
      }
 
@@ -199,6 +190,7 @@ void fetchDisplacementsFromUsrwrk(nrs_t *nrs, int disp_indices[3])
 
 void applyMeshVelocitiesToUsrwrk(nrs_t *nrs, int meshv_indices[3], int filtv_indices[3])
 {
+  mesh_t *mesh = nrs->meshV;
   const auto fo = nrs->fieldOffset;
 
   std::copy(meshv_x.begin(), meshv_x.end(), nrs->usrwrk + meshv_indices[0] * fo);
@@ -208,6 +200,45 @@ void applyMeshVelocitiesToUsrwrk(nrs_t *nrs, int meshv_indices[3], int filtv_ind
   std::copy(filt_meshv_x.begin(), filt_meshv_x.end(), nrs->usrwrk + filtv_indices[0] * fo);
   std::copy(filt_meshv_y.begin(), filt_meshv_y.end(), nrs->usrwrk + filtv_indices[1] * fo);
   std::copy(filt_meshv_z.begin(), filt_meshv_z.end(), nrs->usrwrk + filtv_indices[2] * fo);
+
+  dfloat meshv = 0;
+
+  for (dlong e = 0; e < mesh->Nelements; e++)
+   for (int f = 0; f < mesh->Nfaces; f++)
+     if (mesh->EToB[e*mesh->Nfaces + f] == 2)
+     {
+       dlong offset = e * mesh->Nfaces * mesh->Nfp + f * mesh->Nfp;
+       for (int j = 0; j < mesh->Nfp; j++)
+       {
+         int i = mesh->vmapM[offset + j];
+
+         meshv = nrs->usrwrk[fo*meshv_indices[0] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO MESH VELOCITY X IN APPLY MESHVTOUSRWRK:"<<meshv<<std::endl;
+
+         meshv = nrs->usrwrk[fo*meshv_indices[1] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO MESH VELOCITY Y IN APPLY MESHVTOUSRWRK:"<<meshv<<std::endl;
+
+         meshv = nrs->usrwrk[fo*meshv_indices[2] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO MESH VELOCITY Z IN APPLY MESHVTOUSRWRK:"<<meshv<<std::endl;
+
+         meshv = nrs->usrwrk[fo*filtv_indices[0] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO FILT VELOCITY X IN APPLY MESHVTOUSRWRK:"<<meshv<<std::endl;
+
+         meshv = nrs->usrwrk[fo*filtv_indices[1] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO FILT VELOCITY Y IN APPLY FILTVTOUSRWRK:"<<meshv<<std::endl;
+
+         meshv = nrs->usrwrk[fo*filtv_indices[2] + i];
+         if (std::abs(meshv)> 1e-10)
+           std::cout<<"NON-ZERO FILT VELOCITY Z IN APPLY FILTVTOUSRWRK:"<<meshv<<std::endl;
+       }
+     }
+
+  nrs->o_usrwrk.copyFrom(nrs->usrwrk);
 }
 
 void outputMeshVelCSV(nrs_t *nrs, dfloat time, int tstep, int bID,
@@ -456,7 +487,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
   applyMeshVelocitiesToUsrwrk(nrs, meshv_indices, filtv_indices);
 
-  if (tstep == 10 and iter == 3)
+  if (tstep == 100 and iter == 3)
   { 
     if (platform->comm.mpiRank == 0)
     {  

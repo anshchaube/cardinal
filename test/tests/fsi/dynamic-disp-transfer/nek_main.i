@@ -124,7 +124,7 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
   []
   [time_ramp]
     type = ParsedFunction
-    expression = "(t - ${t0})/${t0}"
+    expression = "t/${t0}"
   []
   [tbar]
     type = PiecewiseFunction
@@ -248,7 +248,7 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
   exodus = false
   csv = true
   print_linear_residuals = false
-  show = 'ystar_main average_disp_in_main'
+  show = 'ystar_main'
 []
 
 [Preconditioning]
@@ -259,7 +259,7 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
 
 [Executioner]
   type = Transient
-  num_steps = 11
+  num_steps = 100
   dt = ${dt}
   nl_rel_tol = 1e-4
   #nl_abs_tol = 1e-10
@@ -272,8 +272,8 @@ t0 = 60 # cutoff for ramping of amplitude, based on output
 
   petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
   petsc_options_value = 'hypre boomeramg 31'
-  fixed_point_max_its = 15
-  fixed_point_min_its = 3
+  fixed_point_max_its = 30
+  fixed_point_min_its = 15
 #  custom_pp = avg_disp_y
 #  custom_rel_tol = 1e-8
 #  custom_abs_tol = 1e-50
