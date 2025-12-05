@@ -1,0 +1,43 @@
+[GENERAL] 
+#startFrom="restart1.fld"
+#verbose=true
+polynomialOrder = 2
+stopAt = numSteps
+numSteps = 100
+
+#stopAt = endTime
+#endTime = 5.0
+
+#dt=targetCFL=2.5 + max = 2.5 + initial=1e-05 # variable timestep, only use for development of flo
+
+dt = 5e-3
+timeStepper = tombo1
+
+subCyclingSteps = 1
+
+#writeInterval = 1
+#writeControl = simulationTime
+writeInterval = 1.0
+
+#regularization = hpfrt + nModes = 1 + scalingCoeff = 30 # filtering for LES
+
+[MESH]
+#connectivityTol=0.02
+boundaryTypeMap = zeroValue,zeroValue,zeroValue,zeroValue,zeroGradient,zeroGradient,codedfixedValue
+solver = pcg+block
+residualTol = 1e-6
+writeToFieldFile = yes
+file = "turek_coarse.re2"
+#solver = none
+
+[PRESSURE]
+residualTol = 1e-04
+
+[VELOCITY]
+boundaryTypeMap = inlet, outlet, wall, wall, sym, sym, mv
+density = 1000.0
+viscosity = 1.0
+residualTol = 1e-06
+
+[TEMPERATURE]
+solver = none

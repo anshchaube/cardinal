@@ -1,0 +1,15 @@
+[Tests]
+  [disp-dynamic-turek]
+    type = CSVDiff
+    input = nek_main.i
+    csvdiff = "meshv.csv nek_main_out.csv nek_main_out_nek0.csv"
+    abs_zero = 1e-8
+    rel_err = 1e-3 #nl_abs_tol is 1e-5
+    requirement = "The turek case will derive the "
+                  "mesh velocity which is the time derivative of the displacement "
+                  "function when using the calculation routines in the .udf file"
+                  "while the meshes are moving".
+    required_object  = 'NekRSProblem'
+    max_time = 2000
+  []
+[]
