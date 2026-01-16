@@ -371,11 +371,24 @@ NekRSProblem::sendBoundaryDeformationToNek()
       if (nekrs::commRank() != _nek_mesh->boundaryCoupling().processor_id(e))
         continue;
 
+      //mapFaceDataToNekFace(e, _disp_x_var, 1.0, &_displacement_x);
+      //mapFaceDataToNekFace(e, _disp_y_var, 1.0, &_displacement_y);
+      //mapFaceDataToNekFace(e, _disp_z_var, 1.0, &_displacement_z);
+
+      //if (*_iter !=1 || !_fp_iteration || _t_step==1)
+      //{
+      //  writeBoundarySolution(e, field::mesh_velocity_x, _displacement_x);
+      //  writeBoundarySolution(e, field::mesh_velocity_y, _displacement_y);
+      //  writeBoundarySolution(e, field::mesh_velocity_z, _displacement_z);
+      //}
+
       mapFaceDataToNekFace(e, _disp_x_var, 1.0, &_displacement_x);
       mapFaceDataToNekFace(e, _prev_disp_x_var, 1.0, &_prev_displacement_x);
       calculateMeshVelocity(e, field::mesh_velocity_x);
       if (*_iter !=1 || !_fp_iteration || _t_step==1) //DR: We dont want to update the mesh velocity on the first iteration it will be 0, instead we want to assume the velocity from the previous calculation
-        writeBoundarySolution(e, field::mesh_velocity_x, _mesh_velocity_elem);
+      {   std::cout<<"executing write boundary soln for mesh velocity x"<<std::endl; 
+          writeBoundarySolution(e, field::mesh_velocity_x, _mesh_velocity_elem);
+      }
 
       mapFaceDataToNekFace(e, _disp_y_var, 1.0, &_displacement_y);
       mapFaceDataToNekFace(e, _prev_disp_y_var, 1.0, &_prev_displacement_y);
@@ -389,7 +402,9 @@ NekRSProblem::sendBoundaryDeformationToNek()
       if (*_iter !=1 || !_fp_iteration || _t_step==1)
         writeBoundarySolution(e, field::mesh_velocity_z, _mesh_velocity_elem);
     }
-    velocityIntegral(*_boundary);
+
+    if (_calc_filtered_velocity) 
+      velocityIntegral(*_boundary);
   }
   else
   {
@@ -896,9 +911,9 @@ NekRSProblem::calculateMeshVelocity(int e, const field::NekWriteEnum & field)
       _mesh_velocity_elem[i] = _initial_mesh_vel;
     else
     {
-    _mesh_velocity_elem[i] = (displacement[i] - prev_disp[i])/dt/_U_ref;
-    //std::cout << "DISPLACEMENT: " << displacement[i] <<std::endl;
-    //std::cout << "PREVIOUS DISPLACEMENT: " << prev_disp[(e*len) + i] <<std::endl;
+      _mesh_velocity_elem[i] = displacement[i];// - prev_disp[i])/dt/_U_ref;
+      std::cout << "DISPLACEMENT: " << displacement[i] <<std::endl;
+      //std::cout << "PREVIOUS DISPLACEMENT: " << prev_disp[(e*len) + i] <<std::endl;
     }
   if(!_fp_iteration)
     _nek_mesh->updateDisplacement(e, displacement, disp_field);

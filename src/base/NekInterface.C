@@ -1527,8 +1527,17 @@ z_displacement(const int id, const dfloat value)
 void
 mesh_velocity_x(const int id, const dfloat value)
 {
+  int slot = indices.mesh_velocity_x/scalarFieldOffset();
+  std::cout<<"Raw indices value:"<<  indices.mesh_velocity_x <<std::endl;
+  std::cout<<"Writing x mesh velocity to slot:"<< slot <<std::endl;
+
+  std::cout<<"Value of x mesh velocity:"<< value <<std::endl;
+  std::cout<<"ID value:"<< id <<std::endl;
+
   nrs_t * nrs = (nrs_t *)nrsPtr();
   nrs->usrwrk[indices.mesh_velocity_x + id] = value;
+
+  std::cout<<"Written value:"<<  nrs->usrwrk[indices.mesh_velocity_x + id]<<std::endl;
 }
 
 void

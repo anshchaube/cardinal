@@ -192,6 +192,7 @@ NekInitAction::act()
           "the space reserved for coupling data is untouched.");
 
     // Initialize scratch space in NekRS to write data incoming data from MOOSE
+    std::cout<<"INITIALIZING USRWRK NOW....."<<std::endl;
     nekrs::initializeScratch(_n_usrwrk_slots);
   }
 }
