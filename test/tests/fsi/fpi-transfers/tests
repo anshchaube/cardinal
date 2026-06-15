@@ -1,0 +1,13 @@
+[Tests]
+  [fpi_transfers_const_meshu]
+    type = CSVDiff
+    input = turek.i
+    csvdiff = "meshv.csv"
+    abs_zero = 1e-10
+    rel_err = 1e-4 #nl_abs_tol is 1e-5
+    requirement = "The displacements transferred from the main app will"
+                  "be used to calculate the correct mesh velocity in the Nek UDF file."
+    required_objects = 'NekRSProblem'
+    max_time = 2000
+  []
+[]

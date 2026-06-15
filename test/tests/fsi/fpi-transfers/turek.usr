@@ -1,0 +1,78 @@
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)  ! Initial Conditions
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      ux   = 0.001
+      uy   = 0.0
+      uz   = 0.0
+
+      temp = 0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /nrsscptr/ nrs_scptr(9)
+      integer*8         nrs_scptr
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat()   ! This routine to modify element vertices
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+
+      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer iel, ifc, bid
+
+c     boundaryTypeMap = inlet, outlet, wall, wall, mv, sym, sym
+      do iel=1,nelt
+      do ifc=1,2*ndim
+         bid = boundaryID(ifc,iel)
+         if (bid.eq.1) then         
+             cbc(ifc,iel,1) = 'v  '
+         elseif (bid.eq.2) then     
+             cbc(ifc,iel,1) = 'O  '
+         elseif (bid.eq.3) then     
+             cbc(ifc,iel,1) = 'W  '
+         elseif (bid.eq.4) then     
+             cbc(ifc,iel,1) = 'W  '
+         elseif (bid.eq.5) then     
+             cbc(ifc,iel,1) = 'SYM'
+         elseif (bid.eq.6) then     
+             cbc(ifc,iel,1) = 'SYM'
+         elseif (bid.eq.7) then     
+             cbc(ifc,iel,1) = 'MV '
+         endif
+      enddo
+      enddo
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+
+      include 'SIZE'
+      include 'TOTAL'
+
+
+      return
+      end
+c-----------------------------------------------------------------------
