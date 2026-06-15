@@ -386,7 +386,7 @@ NekRSProblem::sendBoundaryDeformationToNek()
       mapFaceDataToNekFace(e, _prev_disp_x_var, 1.0, &_prev_displacement_x);
       calculateMeshVelocity(e, field::mesh_velocity_x);
       if (*_iter !=1 || !_fp_iteration || _t_step==1) //DR: We dont want to update the mesh velocity on the first iteration it will be 0, instead we want to assume the velocity from the previous calculation
-      {   std::cout<<"executing write boundary soln for mesh velocity x"<<std::endl; 
+      {   mooseWarning("executing write boundary soln for mesh velocity x"); 
           writeBoundarySolution(e, field::mesh_velocity_x, _mesh_velocity_elem);
       }
 
@@ -912,7 +912,7 @@ NekRSProblem::calculateMeshVelocity(int e, const field::NekWriteEnum & field)
     else
     {
       _mesh_velocity_elem[i] = displacement[i];// - prev_disp[i])/dt/_U_ref;
-      std::cout << "DISPLACEMENT: " << displacement[i] <<std::endl;
+      Moose::out << "DISPLACEMENT: " << displacement[i] <<std::endl;
       //std::cout << "PREVIOUS DISPLACEMENT: " << prev_disp[(e*len) + i] <<std::endl;
     }
   if(!_fp_iteration)

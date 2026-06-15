@@ -1420,13 +1420,19 @@ NekRSProblemBase::copyScratchToDevice()
 {
   if (_minimum_scratch_size_for_coupling + _n_uo_slots > 0)
   {
+    Moose::out<<"Executing copyScratchToDevice"<<std::endl;
     auto n = nekrs::scalarFieldOffset();
     auto nbytes = n * sizeof(dfloat);
+
 
     nrs_t * nrs = (nrs_t *)nekrs::nrsPtr();
     nrs->o_usrwrk.copyFrom(nrs->usrwrk + _first_reserved_usrwrk_slot * n,
                            (_minimum_scratch_size_for_coupling + _n_uo_slots) * nbytes,
                            _first_reserved_usrwrk_slot * nbytes);
+
+//    for (int i = 1*n; i < 2*n; i++)
+//      if (nrs->usrwrk[i] !=0)
+//        std::cout<<"Non zero contents of first disp slot in copyScratchToDevice:"<<nrs->usrwrk[i]<<std::endl; 
   }
 
   if (nekrs::hasMovingMesh())
