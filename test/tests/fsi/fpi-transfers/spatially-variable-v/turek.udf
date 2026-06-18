@@ -1,0 +1,317 @@
+//
+// nekRS User Defined File
+//
+#include <math.h>
+#include "udf.hpp"
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <vector>
+#include <ranges>
+
+#include <algorithm>
+
+static std::vector<dfloat> old_disp_x;
+static std::vector<dfloat> old_disp_y;
+static std::vector<dfloat> old_disp_z;
+
+static std::vector<dfloat> disp_x;
+static std::vector<dfloat> disp_y;
+static std::vector<dfloat> disp_z;
+
+static std::vector<dfloat> meshv_x;
+static std::vector<dfloat> meshv_y;
+static std::vector<dfloat> meshv_z;
+
+int disp_indices[3] = { 1, 2, 3};
+int mshv_indices[3] = { 4, 5, 6};
+
+static dfloat t_prev = 0.0;
+
+#ifdef __okl__
+
+
+void velocityDirichletConditions(bcData *bc)
+{
+  if (bc->id ==1)
+  {
+    dfloat Ubar = 1.0; //CFD 2
+    dfloat H = 0.41;
+    dfloat yy = bc->y;
+    dfloat tt = bc->time;
+
+    dfloat ramp = 1.0;
+
+    if (tt<2.0)
+    {
+      ramp = 0.5*(1.0 - cos(M_PI*tt/2)); 
+    }
+    bc->u = ramp*1.5*Ubar*(4.0/H/H)*yy*(H-yy);
+    bc->v = 0.0;
+    bc->w = 0.0;
+  }
+
+  if(bc->id==7)
+  {
+    bc->meshu = 0.0 * bc->usrwrk[bc->idM + 4*bc->fieldOffset];
+    bc->meshv = 0.0 * bc->usrwrk[bc->idM + 5*bc->fieldOffset];
+    bc->meshw = 0.0 * bc->usrwrk[bc->idM + 6*bc->fieldOffset];
+  }
+}
+
+void meshVelocityDirichletConditions(bcData *bc)
+{
+  if(bc->id==7)
+  {
+    bc->meshu = 0.0 * bc->usrwrk[bc->idM + 1*bc->fieldOffset];
+    bc->meshv = 0.0 * bc->usrwrk[bc->idM + 2*bc->fieldOffset];
+    bc->meshw = 0.0 * bc->usrwrk[bc->idM + 3*bc->fieldOffset];
+  }
+}
+#endif
+
+std::vector<dfloat>
+calculateMeshVelocity(dfloat dt, int bID, nrs_t *nrs,
+                                 const std::vector<dfloat> disp,
+                                 const std::vector<dfloat> old_disp)
+{
+  std::vector<dfloat> meshv(disp.size());
+
+  mesh_t *mesh = nrs->meshV;
+
+  for (dlong e = 0; e < mesh->Nelements; e++)
+   for (int f = 0; f < mesh->Nfaces; f++)
+     if (mesh->EToB[e*mesh->Nfaces + f] == bID)
+     {
+       dlong offset = e * mesh->Nfaces * mesh->Nfp + f * mesh->Nfp;
+       for (int j = 0; j < mesh->Nfp; j++)
+       {
+         int i = mesh->vmapM[offset + j];
+         meshv[i] = (disp[i] - old_disp[i])/dt;
+       }
+     }
+
+  return meshv;
+}
+
+void applyMeshVelocityBC(nrs_t *nrs, dfloat dt_now, int bID,
+                int disp_indices[3], int meshv_indices[3])
+{
+  const auto fo = nrs->fieldOffset;
+
+  MPI_Barrier(platform->comm.mpiComm);
+
+  nrs->o_usrwrk.copyTo(disp_x.data(), fo * sizeof(dfloat), disp_indices[0] * fo * sizeof(dfloat));
+  nrs->o_usrwrk.copyTo(disp_y.data(), fo * sizeof(dfloat), disp_indices[1] * fo * sizeof(dfloat));
+  nrs->o_usrwrk.copyTo(disp_z.data(), fo * sizeof(dfloat), disp_indices[2] * fo * sizeof(dfloat));
+
+  meshv_x = calculateMeshVelocity(dt_now, bID, nrs, disp_x, old_disp_x);
+  meshv_y = calculateMeshVelocity(dt_now, bID, nrs, disp_y, old_disp_y);
+  meshv_z = calculateMeshVelocity(dt_now, bID, nrs, disp_z, old_disp_z);
+
+}
+
+void outputMeshVelCSV(nrs_t *nrs, dfloat time, int tstep, int bID, 
+                                  std::vector<dfloat> mshv_u,
+                                  std::vector<dfloat> mshv_v,
+                                  std::vector<dfloat> mshv_w)
+{
+  mesh_t *mesh = nrs->meshV;
+  const auto fo = nrs->fieldOffset;
+  const auto fieldOffsetByte = nrs->fieldOffset * sizeof(dfloat);
+  dlong nl = mesh->Nlocal;
+
+  dfloat *err_mshv_u = (dfloat *)calloc(fo, sizeof(dfloat));
+  dfloat *err_mshv_v = (dfloat *)calloc(fo, sizeof(dfloat));
+  dfloat *err_mshv_w = (dfloat *)calloc(fo, sizeof(dfloat));
+
+  dfloat *xdat = (dfloat *)calloc(fo, sizeof(dfloat));
+  dfloat *ydat = (dfloat *)calloc(fo, sizeof(dfloat));
+  dfloat *zdat = (dfloat *)calloc(fo, sizeof(dfloat));
+
+  // for testing mask correctness
+  dfloat *bmask = (dfloat *)calloc(fo, sizeof(dfloat));
+
+  dfloat vexp1 = 0.0, vexp2 = 0.0, vexp3 = 0.0;
+  dfloat  xi = 0.0,  yi = 0.0, zi = 0.0;
+  dfloat x0 = 0.15, x1 = 0.6, y0 = 0.15,
+      y1 = 0.25, z0 = 0.0, z1 = 0.01;
+  dfloat pi = 4.0 * atan(1.0);
+  dfloat lx = x1 - x0, ly = y1 - y0, lz = z1 - z0;
+   
+  for (dlong e = 0; e < mesh->Nelements; e++)
+   for (int f = 0; f < mesh->Nfaces; f++)
+      if (mesh->EToB[e*mesh->Nfaces + f] == bID)
+      {
+       int offset = e * mesh->Nfaces * mesh->Nfp + f * mesh->Nfp;
+       for (int j = 0; j < mesh->Nfp; j++)
+       {
+         int i = mesh->vmapM[offset + j];
+
+         xi = mesh->x[i];
+         yi = mesh->y[i];
+         zi = mesh->z[i];
+
+         // mesh velocities -moose:
+         vexp1 = 1.5 * xi*xi + 2.0 * yi * zi - 0.5 * xi;
+         vexp2 = (3.0 * xi * yi - 1.0 * yi*yi + 0.75 * zi);
+         vexp3 = 0.5 * (xi*xi + yi*yi + zi*zi) - 2.5 * xi * zi;
+
+         bmask[i] = 1.0;           
+
+         err_mshv_u[i] = std::abs(vexp1 - mshv_u[i]);           
+         err_mshv_v[i] = std::abs(vexp2 - mshv_v[i]);           
+         err_mshv_w[i] = std::abs(vexp3 - mshv_w[i]);
+
+         xdat[i] = xi;
+         ydat[i] = yi;
+         zdat[i] = zi;
+       }
+      }
+
+  int maxRank = platform->comm.mpiCommSize;
+
+  dfloat *e_umsh_g = nullptr;
+  dfloat *e_vmsh_g = nullptr;
+  dfloat *e_wmsh_g = nullptr;
+
+  dfloat *x_g = nullptr;
+  dfloat *y_g = nullptr;
+  dfloat *z_g = nullptr;
+
+  dfloat *bmask_g = nullptr;
+
+  int *Nls = nullptr;
+  int *displs = nullptr;
+
+  if (platform->comm.mpiRank ==0)
+  {
+    e_umsh_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+    e_vmsh_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+    e_wmsh_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+
+    x_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+    y_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+    z_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+
+    bmask_g = (dfloat *)calloc(nrs->fieldOffset * maxRank, sizeof(dfloat));
+
+    Nls = (int *)calloc(maxRank, sizeof(int));
+    displs = (int *)calloc(maxRank+1, sizeof(int));
+  }
+
+  // collect the `offsets` for gatherv
+  MPI_Gather(&mesh->Nlocal, 1, MPI_INT,
+               Nls, 1, MPI_INT,
+               0, platform->comm.mpiComm);
+
+  if(platform->comm.mpiRank == 0)
+    for (int i = 1; i < maxRank+1; i++)
+      displs[i] = Nls[i-1] + displs[i-1];
+
+  MPI_Gatherv(err_mshv_u, mesh->Nlocal, MPI_DOUBLE,
+          e_umsh_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+  MPI_Gatherv(err_mshv_v, mesh->Nlocal, MPI_DOUBLE,
+          e_vmsh_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+  MPI_Gatherv(err_mshv_w, mesh->Nlocal, MPI_DOUBLE,
+          e_wmsh_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+
+  MPI_Gatherv(xdat, mesh->Nlocal, MPI_DOUBLE,
+          x_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+  MPI_Gatherv(ydat, mesh->Nlocal, MPI_DOUBLE,
+          y_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+  MPI_Gatherv(zdat, mesh->Nlocal, MPI_DOUBLE,
+          z_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+  
+  MPI_Gatherv(bmask, mesh->Nlocal, MPI_DOUBLE,
+          bmask_g, Nls, displs, MPI_DOUBLE,    
+          0, platform->comm.mpiComm);
+
+  if (platform->comm.mpiRank == 0) 
+  {
+    std::string base = "meshv";
+    std::ofstream fout(base+".csv");
+    fout <<"time"<<","<<"x"<<","<<"y"<<","<<"z"<<","
+      <<"error_u_msh"<<","<<"error_v_msh"<<","<<"error_w_msh"<<"\n";
+    for (int i = 0; i < maxRank*fo; ++i)
+      if(bmask_g[i]==1.0)
+        fout <<time<<","<<x_g[i]<<","<<y_g[i]<<","<<z_g[i]<<","
+           <<e_umsh_g[i]<<","<<e_vmsh_g[i]<<","<<e_wmsh_g[i]<<"\n";
+    fout.close();
+  }
+
+
+  free(err_mshv_u);
+  free(err_mshv_v);
+  free(err_mshv_w);
+  free(xdat);
+  free(ydat);
+  free(zdat);
+  free(bmask);
+
+  if (platform->comm.mpiRank == 0  )
+  {
+    free(e_umsh_g);
+    free(e_vmsh_g);
+    free(e_wmsh_g);
+    free(x_g);
+    free(y_g);
+    free(z_g);
+    free(bmask_g);
+    free(Nls);
+    free(displs);
+  }
+}
+
+/* UDF Functions */
+void UDF_LoadKernels(occa::properties& kernelInfo)
+{
+}
+
+void UDF_Setup(nrs_t *nrs)
+{
+  mesh_t *mesh = nrs->meshV;
+  const auto fo = nrs->fieldOffset;
+  
+  disp_x.resize(fo);
+  disp_y.resize(fo);
+  disp_z.resize(fo);
+
+  old_disp_x.resize(fo);
+  old_disp_y.resize(fo);
+  old_disp_z.resize(fo);
+
+  meshv_x.resize(fo);
+  meshv_y.resize(fo);
+  meshv_z.resize(fo);
+}
+
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+  nek::ocopyToNek(time, tstep);
+  nek::userchk();
+
+  dfloat dt_now = 1e-4; //time - t_prev;
+  int boundaryID = 7;
+
+  applyMeshVelocityBC(nrs, dt_now, boundaryID, disp_indices, mshv_indices);
+
+  if (time != t_prev)
+  {
+    t_prev = time;
+    old_disp_x = disp_x;
+    old_disp_y = disp_y;
+    old_disp_z = disp_z;
+  }
+
+  if (tstep ==10)
+    outputMeshVelCSV(nrs, time, tstep, boundaryID, meshv_x, meshv_y, meshv_z);
+ 
+}                                  
