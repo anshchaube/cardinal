@@ -42,7 +42,7 @@ ENABLE_OPENMC       ?= yes
 ENABLE_DAGMC        ?= no
 
 # What GPU backends to enable for Nek (if any)
-OCCA_CUDA_ENABLED=0
+OCCA_CUDA_ENABLED=1
 OCCA_HIP_ENABLED=0
 OCCA_OPENCL_ENABLED=0
 

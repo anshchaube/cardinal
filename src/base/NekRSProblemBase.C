@@ -1442,9 +1442,27 @@ NekRSProblemBase::copyScratchToDevice()
 void 
 NekRSProblemBase::monitor_cfl()
 {
+
   std::cout<<"Dumping CFL in Nek output file:"<< std::endl; //JUST FOR TESTING 
   nrs_t*  nrs  = (nrs_t *) nekrs::nrsPtr();
   mesh_t* mesh = nekrs::flowMesh();
+
+  auto dH = (dfloat *) calloc((mesh->N + 1), sizeof(dfloat));
+
+  for (int n = 0; n < (mesh->N + 1); n++) 
+  {
+    if (n == 0)
+      dH[n] = mesh->gllz[n + 1] - mesh->gllz[n];
+    else if (n == mesh->N)
+      dH[n] = mesh->gllz[n] - mesh->gllz[n - 1];
+    else
+      dH[n] = 0.5 * (mesh->gllz[n + 1] - mesh->gllz[n - 1]);
+  }
+  for (int n = 0; n < (mesh->N + 1); n++)
+    dH[n] = 1.0 / dH[n];
+  
+  nrs->o_idH = platform->device.malloc((mesh->N + 1) * sizeof(dfloat), dH);
+  nrs->o_idH.copyFrom(dH);
 
   nrs->cflKernel(mesh->Nelements,
              nrs->dt[0],
@@ -1468,6 +1486,8 @@ NekRSProblemBase::monitor_cfl()
   }
   platform->o_mempool.slice0.copyFrom(cfl_out,mesh->Nlocal * sizeof(dfloat));
   writeFld("cfl", nrs->timePrevious + nrs->dt[0], nrs->tstep, 1, 1, &platform->o_mempool.slice0, nrs->Nscalar);
+
+  free(dH);
 }
 
 void

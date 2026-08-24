@@ -4,10 +4,10 @@ SCRIPT_DIR=$( dirname $(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null
 set -ex
 
 git submodule update --init contrib/moose
-git submodule update --init contrib/nekRS
-git submodule update --init --recursive contrib/openmc
-git submodule update --init contrib/DAGMC
-git submodule update --init contrib/moab
+# git submodule update --init contrib/nekRS
+# git submodule update --init --recursive contrib/openmc
+# git submodule update --init contrib/DAGMC
+# git submodule update --init contrib/moab
 
 set +ex
 
